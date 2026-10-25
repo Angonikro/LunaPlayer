@@ -1,0 +1,226 @@
+lunaplayer (1.3.3) stable; urgency=medium
+
+  * Add M4A and audio-only MP4 extensions to file discovery and selection.
+  * Keep the existing GStreamer backend and dependencies.
+
+ -- LunaPlayer Project <maintainer@example.invalid>  Sun, 25 Oct 2026 19:30:00 +0100
+
+lunaplayer (1.3.2) stable; urgency=medium
+
+  * Skript zum Erstellen eines Desktop-Starters für ZIP-/Quellcode-Installationen und Debian-Pakete hinzugefügt.
+  * README um chmod-Befehle und die Einrichtung des Desktop-Starters ergänzt.
+  * Starter-Skripte in das Quellarchiv und Debian-Paket aufgenommen.
+  * Wiedergabe, Tray-Funktion und deutsch-/englische Oberfläche beibehalten.
+
+ -- Goldisoft <info@goldisoft.example>  Sun, 25 Oct 2026 16:30:00 +0100
+
+lunaplayer (1.3.0) stable; urgency=medium
+
+  * Move the tray owner into the Tkinter host, using the same direct GTK 3 StatusIcon thread pattern as LunaKalender.
+  * Keep the GTK 4 player UI in a child process to avoid loading GTK 3 and GTK 4 in one Python process.
+  * Add local Unix-socket control for tray show/quit and tray enable/disable.
+  * Preserve the existing GTK 4 player UI and playback features.
+
+ -- Goldisoft <info@goldisoft.example>  Sun, 25 Oct 2026 14:30:00 +0100
+
+lunaplayer (1.2.7) stable; urgency=medium
+
+  * Align GTK 3 StatusIcon tray behavior as closely as possible with LunaKalender.
+  * Explicitly show the icon and preserve separate left-click and right-click actions.
+  * Keep GTK 3 isolated from LunaPlayer's GTK 4 process.
+
+ -- LunaPlayer Project <noreply@example.invalid>  Sun, 25 Oct 2026 14:00:00 +0100
+
+lunaplayer (1.2.5) stable; urgency=medium
+
+  * Fix tray activation by waiting for an explicit GTK 3 StatusIcon readiness signal.
+  * Keep GTK 3 isolated from the GTK 4 player process to avoid GTK namespace conflicts.
+  * Explicitly show the tray icon and fail cleanly if the helper does not initialize.
+
+ -- Goldisoft <info@goldisoft.example>  Sun, 25 Oct 2026 14:00:00 +0100
+
+lunaplayer (1.2.3) stable; urgency=medium
+
+  * Replace Ayatana AppIndicator with GTK 3 Gtk.StatusIcon, matching LunaKalender's tray implementation.
+  * Use separate left-click activation and right-click popup-menu handlers.
+  * Remove Ayatana AppIndicator package dependencies.
+
+ -- Goldisoft <info@goldisoft.example>  Sun, 25 Oct 2026 02:45:00 +0100
+
+lunaplayer (1.2.1) stable; urgency=medium
+
+  * Fix equalizer dialog layout so profile controls remain visible on smaller screens.
+  * Add explicit custom-profile save and delete actions.
+  * Keep custom profiles and live band values persistent; restore factory defaults for built-in presets.
+
+ -- Goldisoft <info@goldisoft.example>  Sun, 25 Oct 2026 03:10:00 +0200
+
+lunaplayer (1.1.9) stable; urgency=medium
+
+  * Add a profile-defaults button to restore factory values for built-in equalizer presets.
+  * Restore the last saved values when resetting a custom profile.
+  * Keep the selected profile name and settings persistent.
+
+ -- Goldisoft <info@goldisoft.example>  Sun, 25 Oct 2026 03:00:00 +0200
+
+lunaplayer (1.1.8) stable; urgency=medium
+
+  * Restore the last-used equalizer profile selection when opening the equalizer.
+  * Save every manual equalizer adjustment immediately and restore it at startup.
+  * Document custom named sound profiles.
+
+ -- Goldisoft <info@goldisoft.example>  Sun, 25 Oct 2026 02:40:00 +0200
+
+lunaplayer (1.1.7) stable; urgency=medium
+
+  * Persist playback volume immediately and restore it on startup.
+  * Save and restore equalizer bands and allow custom named sound profiles.
+  * Add clearer bass, midrange and treble labels to the equalizer controls.
+
+ -- Goldisoft <info@goldisoft.example>  Sun, 25 Oct 2026 02:30:00 +0200
+
+lunaplayer (1.1.6) stable; urgency=medium
+
+  * Add an audio output selector for detected GStreamer audio devices.
+  * Persist the selected output and apply it to music and audio-CD playback.
+  * Keep automatic system audio output as the default.
+
+ -- Goldisoft <info@goldisoft.example>  Sun, 25 Oct 2026 02:15:00 +0200
+
+lunaplayer (1.1.5) stable; urgency=medium
+
+  * Prevent guide text from appearing selected when the Anleitung window opens.
+  * Keep the informational labels out of the keyboard focus chain; playback is unchanged.
+
+ -- Goldisoft <info@goldisoft.example>  Sat, 24 Oct 2026 23:59:00 +0200
+
+lunaplayer (1.1.4) stable; urgency=medium
+
+  * Give elapsed and total playback-time labels fixed widths and centered alignment to prevent squeezed-looking time text.
+  * Keep this change limited to timeline presentation; playback behavior is unchanged.
+
+ -- Goldisoft <info@goldisoft.example>  Sat, 24 Oct 2026 23:58:00 +0200
+
+lunaplayer (1.1.3) stable; urgency=medium
+
+  * Prevent asynchronous CD metadata lookup from overwriting the cover currently selected in the MP3 view.
+  * Keep discovered CD cover candidates scoped to the CD dialog until the user starts CD playback or explicitly selects a cover.
+
+ -- Goldisoft <info@goldisoft.example>  Sat, 24 Oct 2026 23:20:00 +0200
+
+lunaplayer (1.1.2) stable; urgency=medium
+
+  * Keep the MP3 library separate from the temporary CD playlist.
+  * Add a visible “Zur MP3-Bibliothek” control that stops CD playback and restores the original MP3 playlist without starting playback.
+  * Keep the CD playlist limited to the disc tracks, whether one track or all tracks are selected.
+  * Correct the About dialog version.
+
+ -- Goldisoft <goldisoft@localhost>  Sat, 24 Oct 2026 23:45:00 +0200
+
+lunaplayer (1.1.0) unstable; urgency=medium
+
+  * Improve MusicBrainz cover matching using LunaRipper-compatible query order.
+  * Fix stop/play state after CD playback and prevent stale MP3 seeking.
+
+ -- Goldisoft <goldisoft@localhost>  Sat, 24 Oct 2026 23:20:00 +0200
+
+lunaplayer (1.0.9) stable; urgency=medium
+
+  * Fix online cover lookup: search MusicBrainz by artist and album instead of passing a CDDB ID as a MusicBrainz disc ID.
+  * Offer matching Cover Art Archive editions for selection.
+  * Add all audio-CD tracks in disc order to the normal playlist as virtual CD tracks.
+
+ -- Goldisoft <noreply@example.invalid>  Sat, 24 Oct 2026 23:25:00 +0200
+
+lunaplayer (1.0.8) unstable; urgency=medium
+
+  * Fix CDDB hello identity and default-port URL handling by matching the proven LunaRipper request format.
+
+ -- Goldisoft <noreply@example.invalid>  Sat, 24 Oct 2026 20:30:00 +0000
+
+lunaplayer (1.0.8) stable; urgency=medium
+
+  * Show the actual CDDB server response and endpoint when no metadata match is returned.
+  * Correct the Help → Info version display to 1.0.8.
+
+ -- Goldisoft <noreply@example.invalid>  Sat, 24 Oct 2026 22:55:00 +0200
+
+lunaplayer (1.0.6) stable; urgency=medium
+
+  * Add full-disc playback: play all CD tracks in order, automatically advancing at track end.
+  * Add online-cover preview selection and local image loading to the CD dialog.
+
+ -- Goldisoft <noreply@example.invalid>  Sat, 24 Oct 2026 22:40:00 +0200
+
+lunaplayer (1.0.5) stable; urgency=medium
+
+  * Improve CDDB lookup diagnostics and request identity.
+
+ -- Goldisoft <noreply@example.invalid>  Sat, 24 Oct 2026 22:30:00 +0200
+
+lunaplayer (1.0.3) stable; urgency=medium
+
+  * Add a structured German user guide under Help.
+  * Separate the About dialog and show version 1.0.3 and Goldisoft 2026.
+  * Make the help window non-modal and safely closable so it does not block the player.
+
+ -- Goldisoft  Sat, 24 Oct 2026 22:15:00 +0200
+
+lunaplayer (1.0.2) stable; urgency=medium
+
+  * Restore application menu with File, Settings, and Help.
+  * Add CDDB provider configuration and editable server settings.
+  * Add persistent light/dark theme selection.
+
+ -- LunaPlayer Team  Sat, 24 Oct 2026 22:00:00 +0200
+
+lunaplayer (1.0.1) unstable; urgency=medium
+
+  * Fix GTK 4 playlist row lookup after starting playback.
+  * Preserve the existing system-tray toggle and player features.
+
+ -- LunaPlayer Team <noreply@example.org>  Sat, 24 Oct 2026 19:55:00 +0200
+
+lunaplayer (1.0.0~dev7) unstable; urgency=medium
+
+  * Fix startup crash: define the tray command callback before creating TrayController.
+  * Fix desktop activation so a stale active window cannot leave a blank player.
+  * Record startup exceptions in ~/.cache/lunaplayer/startup.log for diagnosis.
+  * Keep the tray-enabled setting consistent on startup.
+
+  * Add optional system-tray indicator with open and quit actions.
+  * Add a persistent System-Tray toggle; when enabled, closing the window hides
+    it to the tray, and when disabled, closing exits the application.
+  * Keep tray integration in a separate GTK 3 helper process to avoid mixing
+    GTK 3 and GTK 4 in the player process.
+
+ -- LunaPlayer Project <maintainer@example.invalid>  Sat, 24 Oct 2026 22:00:00 +0200
+
+#!/bin/sh
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+VERSION=1.0.0~dev5
+STAGE="$ROOT/build/deb"
+rm -rf "$STAGE"
+mkdir -p "$STAGE/DEBIAN" "$STAGE/usr/share/lunaplayer" "$STAGE/usr/bin" "$STAGE/usr/share/applications" "$STAGE/usr/share/icons/hicolor/scalable/apps" "$STAGE/usr/share/doc/lunaplayer"
+chmod 755 "$STAGE/DEBIAN"; chmod g-s "$STAGE/DEBIAN"
+cp "$ROOT/packaging/debian/control" "$STAGE/DEBIAN/control"
+sed -i "s/^Version: .*/Version: $VERSION/" "$STAGE/DEBIAN/control"
+cp "$ROOT/packaging/debian/changelog" "$STAGE/DEBIAN/changelog"
+cp "$ROOT/packaging/debian/copyright" "$STAGE/usr/share/doc/lunaplayer/copyright"
+cp "$ROOT/main.py" "$STAGE/usr/share/lunaplayer/main.py"
+cp -r "$ROOT/app" "$ROOT/ui" "$STAGE/usr/share/lunaplayer/"
+find "$STAGE/usr/share/lunaplayer" -type d -name __pycache__ -prune -exec rm -rf {} +
+cp "$ROOT/data/icons/lunaplayer.svg" "$STAGE/usr/share/icons/hicolor/scalable/apps/lunaplayer.svg"
+sed 's|^Exec=.*|Exec=/usr/bin/lunaplayer|; s|^Icon=.*|Icon=lunaplayer|' "$ROOT/data/desktop/lunaplayer.desktop" > "$STAGE/usr/share/applications/lunaplayer.desktop"
+cat > "$STAGE/usr/bin/lunaplayer" <<'WRAPPER'
+#!/bin/sh
+exec /usr/bin/python3 /usr/share/lunaplayer/main.py "$@"
+WRAPPER
+chmod 755 "$STAGE/usr/bin/lunaplayer"
+find "$STAGE" -type d -exec chmod 755 {} +
+find "$STAGE" -type d -exec chmod g-s {} +
+mkdir -p "$ROOT/dist"
+dpkg-deb --build --root-owner-group "$STAGE" "$ROOT/dist/lunaplayer_${VERSION}_all.deb"
+echo "Built $ROOT/dist/lunaplayer_${VERSION}_all.deb"
+

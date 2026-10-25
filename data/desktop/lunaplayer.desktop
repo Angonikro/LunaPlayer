@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=LunaPlayer
+Comment=Moderner Musikplayer
+Exec=lunaplayer
+Icon=lunaplayer
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+StartupNotify=true

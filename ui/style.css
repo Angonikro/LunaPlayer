@@ -1,0 +1,79 @@
+window {
+  background: #111521;
+  color: #f4f6ff;
+}
+.app-root { background: #111521; color: #f4f6ff; }
+.header {
+  padding: 18px 24px;
+  background: #191f30;
+  border-bottom: 1px solid #2c3448;
+}
+.moon-logo {
+  color: #a9b9ff;
+  font-size: 34px;
+  min-width: 48px;
+}
+.brand { font-size: 23px; font-weight: 700; color: #f6f7ff; }
+.muted { color: #929bb2; font-size: 12px; }
+.suggested-action {
+  background: #6379f4;
+  color: white;
+  border-radius: 12px;
+  padding: 10px 16px;
+}
+.cover {
+  border-radius: 24px;
+  background: linear-gradient(145deg, #354577, #171d36 65%, #6a427d);
+  border: 1px solid #414e78;
+  padding: 26px;
+}
+.cover-moon { color: #dce5ff; font-size: 140px; }
+.cover-caption { color: #dce5ff; letter-spacing: 5px; font-size: 11px; }
+.track-title { font-size: 22px; font-weight: 700; color: #f7f8ff; }
+.play-button {
+  background: #7184ff;
+  color: white;
+  border-radius: 28px;
+  min-width: 56px;
+  min-height: 48px;
+  font-size: 19px;
+}
+button { border-radius: 12px; }
+scale trough { background: #30384d; min-height: 5px; }
+scale highlight { background: #7184ff; }
+scale slider { background: #dce3ff; min-width: 14px; min-height: 14px; }
+.playlist-panel {
+  background: #171d2b;
+  border: 1px solid #2b3348;
+  border-radius: 18px;
+  padding: 18px;
+}
+.section-title { font-size: 18px; font-weight: 700; }
+.track-list { background: transparent; }
+.track-list row {
+  background: #20283a;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.track-list row:selected { background: #354578; }
+.row-title { font-size: 14px; font-weight: 600; color: #f4f6ff; }
+.status {
+  background: #191f30;
+  color: #929bb2;
+  padding: 8px 18px;
+  font-size: 11px;
+}
+
+/* Optional light theme, toggled from Einstellungen. */
+.app-root.light-theme, .app-root.light-theme window { background: #f3f5fa; color: #202638; }
+.light-theme .header, .light-theme .status { background: #e5e9f2; color: #30394e; }
+.light-theme .brand, .light-theme .track-title, .light-theme .row-title, .light-theme .section-title { color: #202638; }
+.light-theme .muted { color: #626b7d; }
+.light-theme .playlist-panel { background: #ffffff; border-color: #d3d9e5; }
+.light-theme .track-list row { background: #edf0f6; }
+.light-theme .track-list row:selected { background: #cbd6f8; }
+.light-theme .cover { background: linear-gradient(145deg, #dfe7ff, #f3f5fa 65%, #ead9f5); border-color: #c3cce4; }
+.light-theme .cover-moon, .light-theme .cover-caption { color: #34436b; }
+
+/* Keep elapsed and total time labels evenly spaced and readable. */
+.time-label { min-width: 3.6em; font-feature-settings: "tnum"; font-size: 13px; }
