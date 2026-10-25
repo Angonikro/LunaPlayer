@@ -1,8 +1,10 @@
 # LunaPlayer 1.3.3
 
-**Ein Musikplayer für Linux · Goldisoft 2026**
-
 LunaPlayer ist ein Desktop-Musikplayer für Linux. Dieses Repository enthält den Quellcode, die benötigten Projektdateien und Skripte zum Erstellen des Debian-Pakets.
+
+![LunaPlayer](lunaplayer.png)
+
+[Github Seite](https://github.com/Angonikro/LunaPlayer/)
 
 ## Funktionen
 
@@ -147,3 +149,5 @@ Die Lizenzbedingungen stehen in der Datei `LICENSE`, sofern sie in diesem Reposi
 
 **Goldisoft · 2026**
 \n\n### Sprache sofort umstellen\n\nDie Auswahl unter **Einstellungen → Sprache / Language** speichert Deutsch oder English und baut das Fenster direkt neu auf. Ein manueller Neustart sollte dafür nicht nötig sein.\n
+
+73 de DO2QG Andreas
