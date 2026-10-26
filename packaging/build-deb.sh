@@ -1,16 +1,22 @@
 #!/bin/sh
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-VERSION=1.3.3
+VERSION=1.3.4
 STAGE="$ROOT/build/deb"
 rm -rf "$STAGE"
-mkdir -p "$STAGE/DEBIAN" "$STAGE/usr/share/lunaplayer" "$STAGE/usr/bin" "$STAGE/usr/share/applications" "$STAGE/usr/share/icons/hicolor/scalable/apps" "$STAGE/usr/share/doc/lunaplayer" "$STAGE/usr/share/lunaplayer/scripts"
+mkdir -p "$STAGE/DEBIAN" "$STAGE/usr/share/lunaplayer" "$STAGE/usr/bin" "$STAGE/usr/share/applications" "$STAGE/usr/share/icons/hicolor/scalable/apps" "$STAGE/usr/share/pixmaps" "$STAGE/usr/share/doc/lunaplayer" "$STAGE/usr/share/lunaplayer/scripts"
 chmod 755 "$STAGE/DEBIAN"; chmod g-s "$STAGE/DEBIAN"
 cp "$ROOT/packaging/debian/control" "$STAGE/DEBIAN/control"
+for maintainer_script in postinst postrm; do
+    if [ -f "$ROOT/packaging/debian/$maintainer_script" ]; then
+        cp "$ROOT/packaging/debian/$maintainer_script" "$STAGE/DEBIAN/$maintainer_script"
+        chmod 755 "$STAGE/DEBIAN/$maintainer_script"
+    fi
+done
 sed -i "s/^Version: .*/Version: $VERSION/" "$STAGE/DEBIAN/control"
 cp "$ROOT/packaging/debian/changelog" "$STAGE/DEBIAN/changelog"
 cp "$ROOT/packaging/debian/copyright" "$STAGE/usr/share/doc/lunaplayer/copyright"
-for doc in README.md CHANGELOG.md RELEASE_NOTES_1.3.3.md LunaPlayer-1.3.1-Handbuch-DE-EN.pdf; do
+for doc in README.md CHANGELOG.md RELEASE_NOTES_1.3.4.md LunaPlayer-1.3.1-Handbuch-DE-EN.pdf; do
     if [ -f "$ROOT/$doc" ]; then cp "$ROOT/$doc" "$STAGE/usr/share/doc/lunaplayer/"; fi
 done
 cp "$ROOT/main.py" "$STAGE/usr/share/lunaplayer/main.py"
@@ -27,7 +33,8 @@ cp "$ROOT/scripts/create_desktop_entry.sh" "$STAGE/usr/share/lunaplayer/create_d
 chmod 755 "$STAGE/usr/share/lunaplayer/scripts/create_desktop_entry.sh"
 find "$STAGE/usr/share/lunaplayer" -type d -name __pycache__ -prune -exec rm -rf {} +
 cp "$ROOT/data/icons/lunaplayer.svg" "$STAGE/usr/share/icons/hicolor/scalable/apps/lunaplayer.svg"
-sed 's|^Exec=.*|Exec=/usr/bin/lunaplayer|; s|^Icon=.*|Icon=lunaplayer|' "$ROOT/data/desktop/lunaplayer.desktop" > "$STAGE/usr/share/applications/lunaplayer.desktop"
+cp "$ROOT/data/icons/lunaplayer-256.png" "$STAGE/usr/share/pixmaps/lunaplayer.png"
+sed 's|^Exec=.*|Exec=/usr/bin/lunaplayer|; s|^Icon=.*|Icon=/usr/share/pixmaps/lunaplayer.png|' "$ROOT/data/desktop/lunaplayer.desktop" > "$STAGE/usr/share/applications/lunaplayer.desktop"
 cat > "$STAGE/usr/bin/lunaplayer" <<'WRAPPER'
 #!/bin/sh
 exec /usr/bin/python3 /usr/share/lunaplayer/main.py "$@"

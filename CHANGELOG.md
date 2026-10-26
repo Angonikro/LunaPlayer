@@ -1,5 +1,11 @@
 # Änderungsprotokoll
 
+## Version 1.3.4
+- Fehlende Cover werden beim Anzeigen eines Titels automatisch über Bilddateien im selben Musikordner ergänzt.
+- Eingebettete Cover haben weiterhin Vorrang; Audio-Dateien werden nicht verändert.
+- Übliche Namen wie `cover.jpg`, `folder.jpg`, `front.jpg` und `album.jpg` sowie PNG-/WebP-Varianten werden erkannt.
+
+
 ## Version 1.3.3
 - M4A- und MP4-Dateien ohne Videospur als unterstützte Audioformate ergänzt.
 - Dateiauswahl, Musikordner-Suche und Wiedergabelisten berücksichtigen die neuen Endungen.
@@ -20,3 +26,7 @@
 - Sprachauswahl Deutsch/Englisch in der Kopfzeile des Players ergänzt.
 - Die gewählte Sprache wird in `~/.config/lunaplayer/settings.json` gespeichert.
 - Englische Beschriftungen für das System-Tray-Menü ergänzt.
+
+## 1.3.4 FIX1
+- Fix Debian installation not refreshing the desktop menu and icon caches.
+- Add post-install and removal cache refresh scripts; keep the application version at 1.3.4.

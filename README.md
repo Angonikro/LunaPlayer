@@ -1,10 +1,8 @@
-# LunaPlayer 1.3.3
+# LunaPlayer 1.3.4
+
+**Ein Musikplayer für Linux · Goldisoft 2026**
 
 LunaPlayer ist ein Desktop-Musikplayer für Linux. Dieses Repository enthält den Quellcode, die benötigten Projektdateien und Skripte zum Erstellen des Debian-Pakets.
-
-![LunaPlayer](lunaplayer.png)
-
-[Github Seite](https://github.com/Angonikro/LunaPlayer/)
 
 ## Funktionen
 
@@ -21,6 +19,10 @@ LunaPlayer ist ein Desktop-Musikplayer für Linux. Dieses Repository enthält de
 - System-Tray verwenden, sofern die Desktop-Umgebung Statussymbole unterstützt
 - Sprachwahl Deutsch/Englisch über **Einstellungen → Sprache / Language**; zusätzlich ist die Auswahl in der Kopfzeile verfügbar
 
+## Desktop-Symbol
+
+Das Debian-Paket installiert das LunaPlayer-Symbol sowohl als SVG unter `hicolor/scalable/apps` als auch als PNG-Fallback unter `/usr/share/pixmaps/lunaplayer.png`. Der Startmenüeintrag verwendet den absoluten PNG-Pfad, damit das Symbol auch auf Desktops ohne zuverlässig aktualisierten SVG-Icon-Cache angezeigt wird.
+
 ## Voraussetzungen
 
 - Linux mit einer unterstützten Desktop-Umgebung
@@ -32,12 +34,12 @@ Die konkret benötigten Pakete können je nach Distribution und installierter Ve
 
 ## Installation auf Debian / Raspberry Pi OS
 
-1. Laden Sie `lunaplayer_1.3.3_all.deb` herunter.
+1. Laden Sie `lunaplayer_1.3.4_all.deb` herunter.
 2. Öffnen Sie ein Terminal im Download-Ordner.
 3. Installieren Sie das Paket:
 
    ```bash
-   sudo apt install ./lunaplayer_1.3.3_all.deb
+   sudo apt install ./lunaplayer_1.3.4_all.deb
    ```
 
 4. Starten Sie LunaPlayer über das Anwendungsmenü. Falls der Startbefehl verfügbar ist, können Sie auch `lunaplayer` im Terminal verwenden.
@@ -61,7 +63,7 @@ Diese Schritte sind für Debian 13 / Raspberry Pi OS auf einem Desktop-System ge
 
    ```bash
    cd ~/Downloads
-   unzip LunaPlayer_1.3.3_GITHUB.zip
+   unzip LunaPlayer_1.3.4_GITHUB.zip
    cd LunaPlayer
    ```
 
@@ -102,6 +104,10 @@ Das Skript erstellt `LunaPlayer.desktop` auf deinem Desktop und verweist auf `ma
 ## Start aus dem Quellcode
 
 Die genauen Schritte hängen von den Projektabhängigkeiten ab. Prüfen Sie zunächst die Paket- und Abhängigkeitsdefinitionen im Repository. Das Debian-Paket ist der empfohlene Installationsweg für unterstützte Debian-basierte Systeme.
+
+## Version 1.3.4 – automatische Cover-Erkennung
+
+Beim Anzeigen eines Titels bevorzugt LunaPlayer weiterhin ein in der Audiodatei eingebettetes Cover. Fehlt dieses, sucht LunaPlayer im selben Ordner nach typischen Bilddateien wie `cover.jpg`, `folder.jpg`, `front.jpg`, `album.jpg` oder entsprechenden PNG-/WebP-Dateien. Ein einzelnes Bild im Ordner wird ebenfalls als Fallback verwendet. Die Zuordnung dient nur der Anzeige; Audiodateien werden nicht verändert.
 
 ## Version 1.3.3 – M4A und MP4-Audio
 
@@ -149,5 +155,5 @@ Die Lizenzbedingungen stehen in der Datei `LICENSE`, sofern sie in diesem Reposi
 
 **Goldisoft · 2026**
 \n\n### Sprache sofort umstellen\n\nDie Auswahl unter **Einstellungen → Sprache / Language** speichert Deutsch oder English und baut das Fenster direkt neu auf. Ein manueller Neustart sollte dafür nicht nötig sein.\n
-
-73 de DO2QG Andreas
+### Debian start-menu icon
+The DEB package installs the LunaPlayer desktop entry and SVG icon. Its maintainer scripts refresh the desktop database and hicolor icon cache after installation so the application can appear in the start menu with its icon.
