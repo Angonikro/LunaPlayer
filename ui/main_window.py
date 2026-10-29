@@ -1,9 +1,14 @@
 """LunaPlayer GTK 4 interface."""
-import os, subprocess
+import os, subprocess, ctypes, ctypes.util, time
 from pathlib import Path
 import gi
 gi.require_version('Gtk','4.0')
-from gi.repository import Gtk, Gio, GLib, Gdk, Pango
+from gi.repository import Gtk, Gio, GLib, Gdk, Pango, Graphene
+try:
+    gi.require_version('GdkX11', '4.0')
+    from gi.repository import GdkX11
+except (ImportError, ValueError):
+    GdkX11 = None
 from app.player import PlayerEngine
 from app.playlist import Playlist
 from app.settings import load_settings, save_settings
@@ -15,7 +20,7 @@ import threading
 from app.controller_client import send_command
 from app.equalizer import PRESETS
 from app.i18n import tr
-from app.vlc_player import VIDEO_EXTENSIONS, VIDEO_FILTER_LABEL, play_video, play_disc
+from app.vlc_player import VIDEO_EXTENSIONS, VIDEO_FILTER_LABEL, EmbeddedVLCPlayer
 
 def fmt_time(seconds):
     seconds=max(0,int(seconds)); return f'{seconds//60}:{seconds%60:02d}'
@@ -26,10 +31,10 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         # constructor may need the title before the instance has settings.
         super().__init__(application=application, title='LunaPlayer')
         self.settings=load_settings()
-        self.set_default_size(1120,740); self.playlist=Playlist(); self._mp3_playlist_snapshot=None; self._cd_playlist_mode=False; self.cd_queue=None; self.cd_queue_index=0; self.cd_metadata=None; self.cd_playlist_meta={}; self.is_seeking=False; self._quitting=False
+        self.set_default_size(1120,740); self._fullscreen_restore = {}; self.playlist=Playlist(); self._mp3_playlist_snapshot=None; self._cd_playlist_mode=False; self.cd_queue=None; self.cd_queue_index=0; self.cd_metadata=None; self.cd_playlist_meta={}; self.is_seeking=False; self._quitting=False
         try:self.engine=PlayerEngine(on_eos=self._on_eos,on_error=self._on_error); self.startup_error=''
         except Exception as exc:self.engine=None; self.startup_error=str(exc)
-        self._build_ui(); self._set_theme(bool(self.settings.get('dark_mode', True))); self._update_volume_label(); GLib.timeout_add(400,self._tick); self.connect('close-request',self._on_close)
+        self._vlc_player=None; self._video_updating_seek=False; self._video_fullscreen_active=False; self._video_surface_xid=0; self._x_display=None; self._xlib=None; self._vlc_child_xid=0; self._vlc_colormap=0; self._fullscreen_video_window=None; self._fullscreen_video_area=None; self._fullscreen_video_xid=0; self._fullscreen_controls_window=None; self._fullscreen_controls_xid=0; self._fullscreen_controls_parented=False; self._fullscreen_pointer_last=None; self._fullscreen_last_motion=0.0; self._fullscreen_blank_cursor=0; self._fullscreen_cursor_hidden=False; self._build_ui(); keys=Gtk.EventControllerKey(); keys.connect('key-pressed', self._main_key_pressed); self.add_controller(keys); self._set_theme(bool(self.settings.get('dark_mode', True))); self._update_volume_label(); GLib.timeout_add(400,self._tick); self.connect('close-request',self._on_close)
         if self.engine:
             self._restore_equalizer_settings()
         if self.engine and self.settings.get('audio_device'):
@@ -42,6 +47,16 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             self._load_default_music_folder()
             if not self.engine.equalizer_available:
                 self._set_status(self._t('Musikordner geprüft · Equalizer-Plugin nicht gefunden; Grundwiedergabe verfügbar'))
+
+    def _on_window_fullscreened_changed(self, window, _property):
+        """Compatibility handler: button visibility is controlled by the two actions."""
+        return
+
+    def _main_key_pressed(self, _controller, keyval, _keycode, _state):
+        if keyval == Gdk.KEY_Escape and self._video_fullscreen_active:
+            self._leave_video_fullscreen()
+            return True
+        return False
 
     def _t(self, text):
         return tr(text, self.settings.get("language", "de"))
@@ -74,6 +89,8 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         menu.append_submenu(self._t("Hilfe"), help_menu)
         bar = Gtk.PopoverMenuBar.new_from_model(menu)
         root.append(bar)
+        self.menu_bar = bar
+        return bar
         actions = [
             ("add-files", lambda *_: self._choose_files()),
             ("choose-folder", lambda *_: self._choose_folder()),
@@ -117,6 +134,15 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             self.settings["volume"] = self.volume.get_value() / 100.0
             save_settings(self.settings)
             self._quitting = True
+            if self._vlc_player:
+                try:self._vlc_player.close()
+                except Exception:pass
+            if self._xlib and self._x_display:
+                try:
+                    if self._vlc_child_xid:self._xlib.XDestroyWindow(self._x_display, self._vlc_child_xid)
+                    self._xlib.XFlush(self._x_display)
+                    self._xlib.XCloseDisplay(self._x_display)
+                except Exception:pass
             if self.engine:
                 self.engine.close()
             replacement = LunaPlayerWindow(application=app)
@@ -210,7 +236,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
     def _about_dialog(self, *_args):
         dialog = Gtk.AboutDialog(transient_for=self, modal=False)
         dialog.set_program_name("LunaPlayer")
-        dialog.set_version("1.4.2")
+        dialog.set_version("1.4.7")
         dialog.set_comments("Deine Musik. Dein Klang.")
         dialog.set_copyright("© Goldisoft 2026")
         dialog.set_license_type(Gtk.License.GPL_3_0)
@@ -300,12 +326,12 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
 
     def _build_ui(self):
         root=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0); root.add_css_class('app-root'); self.root_box=root; self.set_child(root)
-        self._install_menu(root)
-        header=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=12); header.add_css_class('header')
+        self.menu_bar = self._install_menu(root)
+        header=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=12); header.add_css_class('header'); self.header_box=header
         logo=Gtk.Label(label=self._t('☾')); logo.add_css_class('moon-logo')
         titlebox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
         name=Gtk.Label(label=self._t('LunaPlayer'),xalign=0); name.add_css_class('brand')
-        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.4.2',xalign=0); subtitle.add_css_class('muted')
+        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.0',xalign=0); subtitle.add_css_class('muted')
         titlebox.append(name);titlebox.append(subtitle);header.append(logo);header.append(titlebox)
         spacer=Gtk.Box();spacer.set_hexpand(True);header.append(spacer)
         language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
@@ -321,14 +347,23 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         self.tray_toggle.connect('toggled', self._tray_toggle_changed)
         header.append(self.tray_toggle)
         root.append(header)
-        content=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=0);content.set_vexpand(True);root.append(content)
-        left=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=13);left.set_hexpand(True);left.set_size_request(440,-1)
+        content=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=0);content.set_vexpand(True);root.append(content); self.content_box=content
+        left=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=13);left.set_hexpand(True);left.set_size_request(440,-1); self.left_box=left
         for prop,val in [('margin_top',24),('margin_bottom',20),('margin_start',28),('margin_end',24)]:setattr(left,'set_'+prop,val)
         content.append(left)
         self.cover_picture=Gtk.Picture();self.cover_picture.set_content_fit(Gtk.ContentFit.CONTAIN);self.cover_picture.set_size_request(310,310);self.cover_picture.set_halign(Gtk.Align.CENTER);self.cover_picture.add_css_class('cover-picture')
         self.cover_fallback=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=5);self.cover_fallback.set_size_request(310,310);self.cover_fallback.set_halign(Gtk.Align.CENTER);self.cover_fallback.set_valign(Gtk.Align.CENTER);self.cover_fallback.add_css_class('cover')
         moon=Gtk.Label(label=self._t('☾'));moon.add_css_class('cover-moon');cap=Gtk.Label(label=self._t('LUNAPLAYER'));cap.add_css_class('cover-caption');self.cover_fallback.append(moon);self.cover_fallback.append(cap)
-        self.cover_stack=Gtk.Stack();self.cover_stack.set_size_request(310,310);self.cover_stack.add_named(self.cover_fallback,'fallback');self.cover_stack.add_named(self.cover_picture,'picture');self.cover_stack.set_visible_child_name('fallback');left.append(self.cover_stack)
+        self.cover_stack=Gtk.Stack();self.cover_stack.set_size_request(390,300);self.cover_stack.set_hexpand(True);self.cover_stack.add_named(self.cover_fallback,'fallback');self.cover_stack.add_named(self.cover_picture,'picture')
+        self.video_area=Gtk.DrawingArea();self.video_area.set_content_width(640);self.video_area.set_content_height(360);self.video_area.set_hexpand(True);self.video_area.set_vexpand(True);self.video_area.set_size_request(390,260);self.video_area.set_draw_func(self._draw_video_background);self.video_area.set_can_focus(True);self.video_area.add_css_class('video-area');self.cover_stack.add_named(self.video_area,'video');self.cover_stack.set_visible_child_name('fallback');left.append(self.cover_stack)
+        self.video_controls=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=5);self.video_controls.set_visible(False)
+        video_buttons=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=6);video_buttons.set_halign(Gtk.Align.CENTER)
+        self.video_play_button=Gtk.Button(label='Ⅱ');self.video_play_button.connect('clicked',self._video_pause);video_buttons.append(self.video_play_button)
+        vstop=Gtk.Button(label='■');vstop.connect('clicked',self._video_stop);video_buttons.append(vstop)
+        self.video_fullscreen_button=Gtk.Button(label=self._t('Vollbild'));self.video_fullscreen_button.connect('clicked',self._video_fullscreen);video_buttons.append(self.video_fullscreen_button)
+        self.video_window_button=Gtk.Button(label=self._t('Fenster'));self.video_window_button.connect('clicked',self._leave_video_fullscreen);self.video_window_button.set_visible(False);video_buttons.append(self.video_window_button)
+        self.video_seek=Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,0,1000,1);self.video_seek.set_draw_value(False);self.video_seek.set_hexpand(True);self.video_seek.connect('value-changed',self._video_seek_changed)
+        self.video_controls.append(video_buttons);self.video_controls.append(self.video_seek);left.append(self.video_controls)
         self.track_title=Gtk.Label(label=self._t('Noch kein Titel ausgewählt'),xalign=.5);self.track_title.add_css_class('track-title');self.track_title.set_ellipsize(Pango.EllipsizeMode.END)
         self.artist_label=Gtk.Label(label=self._t('Füge Musik hinzu, um zu beginnen'),xalign=.5);self.artist_label.add_css_class('muted');left.append(self.track_title);left.append(self.artist_label)
         timeline=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=10);self.elapsed=Gtk.Label(label=self._t('0:00'));self.total=Gtk.Label(label=self._t('0:00'))
@@ -348,7 +383,9 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         left.append(controls)
         volume_row=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=10);volume_row.append(Gtk.Label(label=self._t('🔊')))
         self.volume=Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,0,100,1);self.volume.set_value(float(self.settings.get('volume',.75))*100);self.volume.set_draw_value(False);self.volume.set_hexpand(True);self.volume.connect('value-changed',self._volume_changed);self.volume_label=Gtk.Label(label=self._t('75%'));volume_row.append(self.volume);volume_row.append(self.volume_label);left.append(volume_row)
-        listcol=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10);listcol.set_size_request(400,-1)
+        # Audio-only controls are hidden while video mode is active.
+        self._music_only_widgets = [self.track_title, self.artist_label, timeline, controls, volume_row]
+        listcol=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10);listcol.set_size_request(400,-1); self.playlist_panel=listcol
         for prop,val in [('margin_top',22),('margin_bottom',20),('margin_start',4),('margin_end',22)]:setattr(listcol,'set_'+prop,val)
         listcol.add_css_class('playlist-panel');content.append(listcol)
         phead=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=8);ptitle=Gtk.Label(label=self._t('Wiedergabeliste'),xalign=0);ptitle.add_css_class('section-title');phead.append(ptitle);sp=Gtk.Box();sp.set_hexpand(True);phead.append(sp)
@@ -360,7 +397,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         scroll=Gtk.ScrolledWindow();scroll.set_child(self.listbox);scroll.set_vexpand(True);listcol.append(scroll)
         rowbuttons=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=6)
         rem=Gtk.Button(label=self._t('Aus Playlist entfernen'));rem.connect('clicked',self._remove_selected);clear=Gtk.Button(label=self._t('Leeren'));clear.connect('clicked',self._clear_playlist);rowbuttons.append(rem);rowbuttons.append(clear);listcol.append(rowbuttons)
-        self.status=Gtk.Label(label=self._t('Bereit'),xalign=0);self.status.add_css_class('status');root.append(self.status)
+        self.status=Gtk.Label(label=self._t('Bereit'),xalign=0);self.status.add_css_class('status');root.append(self.status); self.root_box=root
         css=Gtk.CssProvider();css.load_from_path(str(Path(__file__).parent/'style.css'));Gtk.StyleContext.add_provider_for_display(self.get_display(),css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
     def _file_dialog(self,title,action,callback,multiple=False,filters=True):
@@ -391,11 +428,483 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         if response == Gtk.ResponseType.ACCEPT:
             paths = [f.get_path() for f in dialog.get_files() if f.get_path()]
             try:
-                proc = play_video(paths)
-                self._set_status(f"VLC gestartet: {len(paths)} Video(s) · PID {proc.pid}")
+                self._start_embedded_video(paths=paths)
             except Exception as exc:
                 self._set_status(f"Video-Wiedergabe fehlgeschlagen: {exc}")
         dialog.destroy()
+
+    def _draw_video_background(self, _area, cr, width, height):
+        cr.set_source_rgb(0.025, 0.03, 0.04); cr.paint()
+
+    def _ensure_vlc_player(self):
+        if self._vlc_player is None:
+            self._vlc_player = EmbeddedVLCPlayer(on_finished=lambda: GLib.idle_add(self._video_next))
+        return self._vlc_player
+
+    def _start_embedded_video(self, paths=None, disc=None):
+        """Render VLC in an opaque X11 child positioned over the in-app video area.
+
+        No secondary GTK window is created: the native VLC surface is a child of
+        LunaPlayer's own top-level X11 surface and follows the DrawingArea bounds.
+        """
+        if self.engine:
+            self.engine.stop()
+        for widget in self._music_only_widgets:
+            widget.set_visible(False)
+        self.cover_stack.set_visible_child_name('video')
+        self.video_controls.set_visible(True)
+        self.video_play_button.set_label('Ⅱ')
+        GLib.idle_add(self._bind_and_start_vlc, paths, disc)
+
+    def _bind_and_start_vlc(self, paths, disc):
+        try:
+            native = self.get_native()
+            surface = native.get_surface() if native else None
+            if surface is None:
+                GLib.timeout_add(100, self._bind_and_start_vlc, paths, disc)
+                return False
+            if GdkX11 is None or not isinstance(surface, GdkX11.X11Surface):
+                self._set_status(self._t('Die integrierte VLC-Ausgabe benötigt eine X11/XWayland-Sitzung.'))
+                self._restore_music_view()
+                return False
+            xid = int(GdkX11.X11Surface.get_xid(surface))
+            self._video_surface_xid = xid
+            if not self._vlc_child_xid:
+                self._create_vlc_child_window(xid)
+            self._position_vlc_child()
+            player = self._ensure_vlc_player()
+            player.set_window(self._vlc_child_xid)
+            if disc:
+                player.play_disc(*disc)
+                self._set_status(f"{disc[0].upper()} wird im LunaPlayer-Fenster abgespielt")
+            else:
+                player.play_paths(paths or [])
+                self._set_status(f"Video direkt in LunaPlayer: {len(paths or [])} Datei(en)")
+        except Exception as exc:
+            self._set_status(f"Video-Wiedergabe fehlgeschlagen: {exc}")
+            self._hide_vlc_child()
+            self._restore_music_view()
+        return False
+
+    def _create_vlc_child_window(self, parent_xid):
+        """Create an opaque VLC X11 child inside LunaPlayer's main window."""
+        library = ctypes.util.find_library("X11")
+        if not library:
+            raise RuntimeError("libX11 fehlt; VLC-Videoausgabe kann nicht eingebettet werden.")
+        self._xlib = ctypes.CDLL(library)
+        class XVisualInfo(ctypes.Structure):
+            _fields_ = [("visual", ctypes.c_void_p), ("visualid", ctypes.c_ulong),
+                ("screen", ctypes.c_int), ("depth", ctypes.c_int), ("visual_class", ctypes.c_int),
+                ("red_mask", ctypes.c_ulong), ("green_mask", ctypes.c_ulong), ("blue_mask", ctypes.c_ulong),
+                ("colormap_size", ctypes.c_int), ("bits_per_rgb", ctypes.c_int)]
+        class XSetWindowAttributes(ctypes.Structure):
+            _fields_ = [("background_pixmap", ctypes.c_ulong), ("background_pixel", ctypes.c_ulong),
+                ("border_pixmap", ctypes.c_ulong), ("border_pixel", ctypes.c_ulong),
+                ("bit_gravity", ctypes.c_int), ("win_gravity", ctypes.c_int), ("backing_store", ctypes.c_int),
+                ("backing_planes", ctypes.c_ulong), ("backing_pixel", ctypes.c_ulong), ("save_under", ctypes.c_int),
+                ("event_mask", ctypes.c_long), ("do_not_propagate_mask", ctypes.c_long),
+                ("override_redirect", ctypes.c_int), ("colormap", ctypes.c_ulong), ("cursor", ctypes.c_ulong)]
+        self._xlib.XOpenDisplay.argtypes=[ctypes.c_char_p]; self._xlib.XOpenDisplay.restype=ctypes.c_void_p
+        self._xlib.XDefaultScreen.argtypes=[ctypes.c_void_p]; self._xlib.XDefaultScreen.restype=ctypes.c_int
+        self._xlib.XMatchVisualInfo.argtypes=[ctypes.c_void_p,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.POINTER(XVisualInfo)]; self._xlib.XMatchVisualInfo.restype=ctypes.c_int
+        self._xlib.XCreateColormap.argtypes=[ctypes.c_void_p,ctypes.c_ulong,ctypes.c_void_p,ctypes.c_int]; self._xlib.XCreateColormap.restype=ctypes.c_ulong
+        self._xlib.XCreateWindow.argtypes=[ctypes.c_void_p,ctypes.c_ulong,ctypes.c_int,ctypes.c_int,ctypes.c_uint,ctypes.c_uint,ctypes.c_uint,ctypes.c_int,ctypes.c_uint,ctypes.c_void_p,ctypes.c_ulong,ctypes.POINTER(XSetWindowAttributes)]; self._xlib.XCreateWindow.restype=ctypes.c_ulong
+        self._xlib.XFreeColormap.argtypes=[ctypes.c_void_p,ctypes.c_ulong]
+        for name in ('XMapRaised','XRaiseWindow','XClearWindow','XUnmapWindow'):
+            getattr(self._xlib,name).argtypes=[ctypes.c_void_p,ctypes.c_ulong]
+        self._xlib.XMapRaised.restype=ctypes.c_int; self._xlib.XRaiseWindow.restype=ctypes.c_int; self._xlib.XClearWindow.restype=ctypes.c_int; self._xlib.XUnmapWindow.restype=ctypes.c_int
+        self._xlib.XSetWindowBackground.argtypes=[ctypes.c_void_p,ctypes.c_ulong,ctypes.c_ulong]; self._xlib.XSetWindowBackground.restype=ctypes.c_int
+        self._xlib.XMoveResizeWindow.argtypes=[ctypes.c_void_p,ctypes.c_ulong,ctypes.c_int,ctypes.c_int,ctypes.c_uint,ctypes.c_uint]; self._xlib.XMoveResizeWindow.restype=ctypes.c_int
+        self._xlib.XSync.argtypes=[ctypes.c_void_p,ctypes.c_int]; self._xlib.XSync.restype=ctypes.c_int
+        self._xlib.XDestroyWindow.argtypes=[ctypes.c_void_p,ctypes.c_ulong]; self._xlib.XDestroyWindow.restype=ctypes.c_int
+        self._xlib.XFlush.argtypes=[ctypes.c_void_p]; self._xlib.XFlush.restype=ctypes.c_int
+        self._xlib.XCloseDisplay.argtypes=[ctypes.c_void_p]; self._xlib.XCloseDisplay.restype=ctypes.c_int
+        self._xlib.XSetWindowBackground.argtypes=[ctypes.c_void_p,ctypes.c_ulong,ctypes.c_ulong]
+        self._xlib.XMoveResizeWindow.argtypes=[ctypes.c_void_p,ctypes.c_ulong,ctypes.c_int,ctypes.c_int,ctypes.c_uint,ctypes.c_uint]
+        self._xlib.XSync.argtypes=[ctypes.c_void_p,ctypes.c_int]; self._xlib.XUnmapWindow.argtypes=[ctypes.c_void_p,ctypes.c_ulong]
+        self._xlib.XDestroyWindow.argtypes=[ctypes.c_void_p,ctypes.c_ulong]; self._xlib.XFlush.argtypes=[ctypes.c_void_p]
+        self._x_display=self._xlib.XOpenDisplay(None)
+        if not self._x_display: raise RuntimeError("Keine X11-Verbindung verfügbar. Bitte X11/XWayland verwenden.")
+        screen=self._xlib.XDefaultScreen(self._x_display); vi=XVisualInfo()
+        if not self._xlib.XMatchVisualInfo(self._x_display,screen,24,4,ctypes.byref(vi)):
+            raise RuntimeError("Kein deckender 24-Bit-X11-Visual für die VLC-Ausgabe gefunden.")
+        cmap=self._xlib.XCreateColormap(self._x_display,int(parent_xid),vi.visual,0)
+        if not cmap: raise RuntimeError("X11-Farbkarte für VLC konnte nicht erstellt werden.")
+        attrs=XSetWindowAttributes(); attrs.background_pixel=0; attrs.border_pixel=0; attrs.colormap=cmap
+        self._vlc_child_xid=self._xlib.XCreateWindow(self._x_display,int(parent_xid),0,0,640,360,0,vi.depth,1,vi.visual,(1<<1)|(1<<3)|(1<<13),ctypes.byref(attrs))
+        if not self._vlc_child_xid:
+            self._xlib.XFreeColormap(self._x_display,cmap); raise RuntimeError("VLC-Ausgabefläche konnte nicht erstellt werden.")
+        self._vlc_colormap=cmap
+        self._xlib.XSetWindowBackground(self._x_display,self._vlc_child_xid,0)
+        self._xlib.XMapRaised(self._x_display,self._vlc_child_xid); self._xlib.XClearWindow(self._x_display,self._vlc_child_xid); self._xlib.XSync(self._x_display,0)
+
+    def _position_vlc_child(self):
+        # The normal-window geometry must never be applied after VLC has been
+        # reparented into the dedicated fullscreen toplevel. The periodic UI
+        # tick calls this method while video controls are visible; previously
+        # that reset the fullscreen child to the small video_area dimensions.
+        if self._video_fullscreen_active:
+            self._resize_fullscreen_vlc_child()
+            return
+        if not (self._xlib and self._x_display and self._vlc_child_xid): return
+        try:
+            scale=max(1,int(self.get_scale_factor()))
+            ok,point=self.video_area.compute_point(self,Graphene.Point())
+            if not ok: return
+            width=max(1,self.video_area.get_width()*scale); height=max(1,self.video_area.get_height()*scale)
+            self._xlib.XMoveResizeWindow(self._x_display,self._vlc_child_xid,int(point.x*scale),int(point.y*scale),width,height)
+            self._xlib.XMapRaised(self._x_display,self._vlc_child_xid); self._xlib.XSync(self._x_display,0)
+        except Exception: pass
+
+    def _hide_vlc_child(self):
+        if self._xlib and self._x_display and self._vlc_child_xid:
+            try: self._xlib.XUnmapWindow(self._x_display,self._vlc_child_xid); self._xlib.XFlush(self._x_display)
+            except Exception: pass
+
+    def _restore_video_child_after_play(self):
+        """Map and size the VLC child after playback resumes/restarts."""
+        if not (self._xlib and self._x_display and self._vlc_child_xid):
+            return False
+        try:
+            if self._video_fullscreen_active:
+                self._resize_fullscreen_vlc_child()
+                self._xlib.XMapWindow(self._x_display, self._vlc_child_xid)
+                self._xlib.XSync(self._x_display, 0)
+                if self._fullscreen_controls_xid:
+                    self._xlib.XRaiseWindow(self._x_display, self._fullscreen_controls_xid)
+            else:
+                self._position_vlc_child()
+        except Exception:
+            pass
+        return False
+
+    def _restore_music_view(self):
+        if self._video_fullscreen_active:
+            self._leave_video_fullscreen()
+        self.video_controls.set_visible(False)
+        self.cover_stack.set_visible_child_name('fallback')
+        for widget in self._music_only_widgets: widget.set_visible(True)
+        self.video_fullscreen_button.set_label(self._t('Vollbild'))
+
+    def _video_pause(self, *_):
+        if self._vlc_player:
+            playing = self._vlc_player.pause_toggle()
+            self.video_play_button.set_label('Ⅱ' if playing else '▶')
+            # Keep the native VLC child mapped after restarting a stopped video.
+            # Reparenting the fullscreen window should not be required to make
+            # the video visible again.
+            if playing:
+                GLib.idle_add(self._restore_video_child_after_play)
+
+    def _video_stop(self, *_):
+        """Stop the video without leaving fullscreen when the stop control is used there."""
+        if self._vlc_player:
+            self._vlc_player.stop()
+        # In normal window mode, hide the native VLC child before restoring
+        # the music view (this is the behavior that worked in 1.5.35).
+        # In fullscreen, keep the child mapped so restarting playback does not
+        # leave the video invisible until the fullscreen window is toggled.
+        if not self._video_fullscreen_active:
+            self._hide_vlc_child()
+        # After Stop, show Play (not Pause); the next click reloads the stopped media.
+        self.video_play_button.set_label('▶')
+        # In fullscreen, keep the dedicated fullscreen window open.
+        if not self._video_fullscreen_active:
+            self._restore_music_view()
+        self._set_status(self._t('Video-Wiedergabe gestoppt'))
+
+    def _video_next(self):
+        if self._vlc_player and self._vlc_player.next():
+            return False
+        return False
+
+    def _video_seek_changed(self, scale):
+        if self._vlc_player and not self._video_updating_seek:
+            self._vlc_player.seek(scale.get_value() / 1000.0)
+
+    def _video_fullscreen(self, *_):
+        """Move the native VLC X11 child into a dedicated true-fullscreen window.
+
+        GTK fullscreen on the main player window alone is unreliable for an
+        embedded X11 child. A separate undecorated toplevel owns the fullscreen
+        surface, and the existing VLC child is reparented into that surface.
+        Playback is not restarted, so position and audio remain uninterrupted.
+        """
+        if self._video_fullscreen_active:
+            self._leave_video_fullscreen()
+            return
+        if not (self._xlib and self._x_display and self._vlc_child_xid and self._video_surface_xid):
+            self._set_status(self._t('Vollbild nicht verfügbar: VLC-Videofläche ist noch nicht bereit.'))
+            return
+        self._video_fullscreen_active = True
+        self._sync_video_fullscreen_label()
+        app = self.get_application()
+        win = Gtk.Window(application=app)
+        win.set_title('LunaPlayer – Vollbild')
+        win.set_decorated(False)
+        win.set_resizable(True)
+        win.set_default_size(max(640, self.get_width()), max(360, self.get_height()))
+        area = Gtk.DrawingArea()
+        area.set_hexpand(True); area.set_vexpand(True)
+        area.set_content_width(1); area.set_content_height(1)
+        area.add_css_class('video-area')
+        area.connect('resize', self._on_fullscreen_video_resize)
+        keys = Gtk.EventControllerKey()
+        keys.connect('key-pressed', self._fullscreen_key_pressed)
+        win.add_controller(keys)
+        win.set_child(area)
+        win.connect('close-request', self._fullscreen_close_requested)
+        self._fullscreen_video_window = win
+        self._fullscreen_video_area = area
+        # Put the existing controls in a separate, undecorated floating window.
+        # An embedded native X11 VLC child sits above GTK's normal drawing layer,
+        # so a Gtk.Overlay in the fullscreen window would be hidden behind video.
+        controls_win = Gtk.Window(application=app)
+        controls_win.set_title('LunaPlayer – Videosteuerung')
+        controls_win.set_decorated(False)
+        controls_win.set_resizable(False)
+        controls_win.set_default_size(800, 86)
+        controls_win.set_transient_for(win)
+        controls_win.set_hide_on_close(True)
+        # GTK widgets can have only one parent. Detach the controls from the
+        # normal layout before attaching them to the floating fullscreen window;
+        # otherwise GTK leaves an empty grey toplevel instead of rendering them.
+        controls_parent = self.video_controls.get_parent()
+        if controls_parent is self.left_box:
+            self.left_box.remove(self.video_controls)
+        elif controls_parent is not None:
+            try:
+                if hasattr(controls_parent, 'remove'):
+                    controls_parent.remove(self.video_controls)
+                elif hasattr(controls_parent, 'set_child'):
+                    controls_parent.set_child(None)
+            except Exception:
+                pass
+        self.video_controls.add_css_class('fullscreen-video-controls')
+        controls_win.add_css_class('fullscreen-controls-window')
+        controls_win.set_child(self.video_controls)
+        self.video_controls.set_visible(True)
+        self._fullscreen_controls_window = controls_win
+        self._fullscreen_controls_xid = 0
+        self._fullscreen_pointer_last = None
+        self._fullscreen_last_motion = 0.0
+        win.present()
+        win.fullscreen()
+        controls_win.present()
+        controls_win.set_visible(False)
+        GLib.idle_add(self._position_fullscreen_controls)
+        GLib.timeout_add(100, self._poll_fullscreen_pointer)
+        # Wait for the window manager to apply fullscreen before parenting VLC;
+        # retrying the reparent and sizing once more avoids stale initial sizes.
+        GLib.idle_add(self._reparent_vlc_to_fullscreen)
+        GLib.timeout_add(200, self._reparent_vlc_to_fullscreen)
+        GLib.timeout_add(350, self._resize_fullscreen_vlc_child)
+        GLib.timeout_add(700, self._resize_fullscreen_vlc_child)
+
+    def _position_fullscreen_controls(self):
+        """Place the floating controls over the bottom edge of the fullscreen video."""
+        if not (self._video_fullscreen_active and self._fullscreen_controls_window and self._xlib and self._x_display):
+            return False
+        try:
+            native = self._fullscreen_controls_window.get_native()
+            surface = native.get_surface() if native else None
+            if surface is None or GdkX11 is None or not isinstance(surface, GdkX11.X11Surface):
+                return True
+            self._fullscreen_controls_xid = int(GdkX11.X11Surface.get_xid(surface))
+            self._xlib.XDefaultScreen.argtypes = [ctypes.c_void_p]
+            self._xlib.XDefaultScreen.restype = ctypes.c_int
+            self._xlib.XDisplayWidth.argtypes = [ctypes.c_void_p, ctypes.c_int]
+            self._xlib.XDisplayWidth.restype = ctypes.c_int
+            self._xlib.XDisplayHeight.argtypes = [ctypes.c_void_p, ctypes.c_int]
+            self._xlib.XDisplayHeight.restype = ctypes.c_int
+            screen = self._xlib.XDefaultScreen(self._x_display)
+            width = max(640, int(self._xlib.XDisplayWidth(self._x_display, screen)))
+            height = max(80, int(self._xlib.XDisplayHeight(self._x_display, screen)))
+            bar_h = 86
+            self._xlib.XMoveResizeWindow(self._x_display, self._fullscreen_controls_xid, 0, max(0, height - bar_h), width, bar_h)
+            self._xlib.XRaiseWindow(self._x_display, self._fullscreen_controls_xid)
+            self._xlib.XSync(self._x_display, 0)
+        except Exception:
+            pass
+        return False
+
+    def _poll_fullscreen_pointer(self):
+        """Show floating controls on pointer movement; hide after two idle seconds."""
+        if not self._video_fullscreen_active or not self._fullscreen_video_window:
+            return False
+        if not (self._xlib and self._x_display):
+            return True
+        try:
+            display = self._x_display
+            self._xlib.XDefaultRootWindow.argtypes = [ctypes.c_void_p]
+            self._xlib.XDefaultRootWindow.restype = ctypes.c_ulong
+            root = self._xlib.XDefaultRootWindow(display)
+            root_return = ctypes.c_ulong(); child_return = ctypes.c_ulong()
+            root_x = ctypes.c_int(); root_y = ctypes.c_int(); win_x = ctypes.c_int(); win_y = ctypes.c_int(); mask = ctypes.c_uint()
+            self._xlib.XQueryPointer.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.POINTER(ctypes.c_ulong), ctypes.POINTER(ctypes.c_ulong), ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_uint)]
+            self._xlib.XQueryPointer.restype = ctypes.c_int
+            if not self._xlib.XQueryPointer(display, root, ctypes.byref(root_return), ctypes.byref(child_return), ctypes.byref(root_x), ctypes.byref(root_y), ctypes.byref(win_x), ctypes.byref(win_y), ctypes.byref(mask)):
+                return True
+            pos = (root_x.value, root_y.value)
+            now = time.monotonic()
+            if pos != self._fullscreen_pointer_last:
+                self._fullscreen_pointer_last = pos
+                self._fullscreen_last_motion = now
+                controls = self._fullscreen_controls_window
+                if controls and not controls.get_visible():
+                    controls.set_visible(True)
+                    self._set_fullscreen_cursor_hidden(False)
+                    GLib.idle_add(self._position_fullscreen_controls)
+                elif self._fullscreen_controls_xid:
+                    self._xlib.XRaiseWindow(display, self._fullscreen_controls_xid)
+                    self._xlib.XSync(display, 0)
+            elif self._fullscreen_last_motion and now - self._fullscreen_last_motion >= 2.0:
+                if self._fullscreen_controls_window:
+                    self._fullscreen_controls_window.set_visible(False)
+                self._set_fullscreen_cursor_hidden(True)
+                self._fullscreen_last_motion = 0.0
+        except Exception:
+            pass
+        return True
+
+    def _set_fullscreen_cursor_hidden(self, hidden):
+        """Hide/show the pointer through XFixes, avoiding per-window cursor mutation."""
+        if not self._video_fullscreen_active or not self._x_display:
+            return
+        try:
+            # XFixes operates on the display/root pointer directly. This avoids
+            # applying a custom cursor to GTK/VLC windows that are being hidden,
+            # reparented, or destroyed during fullscreen transitions.
+            if not hasattr(self, "_xfixes") or self._xfixes is None:
+                library = ctypes.util.find_library("Xfixes")
+                if not library:
+                    return  # Fail safe: keep the pointer visible rather than crash.
+                self._xfixes = ctypes.CDLL(library)
+                self._xfixes.XFixesHideCursor.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+                self._xfixes.XFixesHideCursor.restype = None
+                self._xfixes.XFixesShowCursor.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+                self._xfixes.XFixesShowCursor.restype = None
+            root = self._xlib.XDefaultRootWindow(self._x_display)
+            if hidden:
+                self._xfixes.XFixesHideCursor(self._x_display, root)
+            else:
+                self._xfixes.XFixesShowCursor(self._x_display, root)
+            self._fullscreen_cursor_hidden = bool(hidden)
+            self._xlib.XFlush(self._x_display)
+        except Exception:
+            # Cursor cosmetics must never take down video playback.
+            self._fullscreen_cursor_hidden = False
+
+    def _fullscreen_key_pressed(self, _controller, keyval, _keycode, _state):
+        if keyval == Gdk.KEY_Escape:
+            self._leave_video_fullscreen()
+            return True
+        return False
+
+    def _fullscreen_close_requested(self, *_):
+        self._leave_video_fullscreen()
+        return True
+
+    def _reparent_vlc_to_fullscreen(self):
+        if not self._video_fullscreen_active or not self._fullscreen_video_window:
+            return False
+        native = self._fullscreen_video_window.get_native()
+        surface = native.get_surface() if native else None
+        if surface is None:
+            return True
+        if GdkX11 is None or not isinstance(surface, GdkX11.X11Surface):
+            self._set_status(self._t('Vollbild benötigt eine X11/XWayland-Sitzung.'))
+            self._leave_video_fullscreen()
+            return False
+        self._fullscreen_video_xid = int(GdkX11.X11Surface.get_xid(surface))
+        self._xlib.XReparentWindow(self._x_display, self._vlc_child_xid, self._fullscreen_video_xid, 0, 0)
+        self._resize_fullscreen_vlc_child()
+        self._xlib.XMapRaised(self._x_display, self._vlc_child_xid)
+        self._xlib.XSync(self._x_display, 0)
+        return False
+
+    def _on_fullscreen_video_resize(self, _area, _width, _height):
+        GLib.idle_add(self._resize_fullscreen_vlc_child)
+
+    def _resize_fullscreen_vlc_child(self):
+        """Keep the reparented VLC X11 child at the physical screen size.
+
+        GTK's fullscreen window and drawing-area allocations can briefly report
+        their old/small dimensions after the window-manager transition. The
+        native VLC child is not laid out by GTK, so use the actual X11 screen
+        dimensions here (the same reliable sizing source as the video fix in
+        1.5.25), while retaining 1.5.21's dedicated undecorated fullscreen
+        window and reparenting logic.
+        """
+        if not (self._video_fullscreen_active and self._xlib and self._x_display and self._vlc_child_xid and self._fullscreen_video_window):
+            return False
+        try:
+            self._xlib.XDefaultScreen.argtypes = [ctypes.c_void_p]
+            self._xlib.XDefaultScreen.restype = ctypes.c_int
+            self._xlib.XDisplayWidth.argtypes = [ctypes.c_void_p, ctypes.c_int]
+            self._xlib.XDisplayWidth.restype = ctypes.c_int
+            self._xlib.XDisplayHeight.argtypes = [ctypes.c_void_p, ctypes.c_int]
+            self._xlib.XDisplayHeight.restype = ctypes.c_int
+            screen = self._xlib.XDefaultScreen(self._x_display)
+            width = max(1, int(self._xlib.XDisplayWidth(self._x_display, screen)))
+            height = max(1, int(self._xlib.XDisplayHeight(self._x_display, screen)))
+            self._xlib.XMoveResizeWindow(self._x_display, self._vlc_child_xid, 0, 0, width, height)
+            self._xlib.XRaiseWindow(self._x_display, self._vlc_child_xid)
+            self._xlib.XSync(self._x_display, 0)
+        except Exception as exc:
+            try: self._set_status(f"VLC-Vollbildgröße konnte nicht gesetzt werden: {exc}")
+            except Exception: pass
+        return False
+
+    def _leave_video_fullscreen(self, *_):
+        if not self._video_fullscreen_active:
+            return
+        self._set_fullscreen_cursor_hidden(False)
+        self._video_fullscreen_active = False
+        self._sync_video_fullscreen_label()
+        win = self._fullscreen_video_window
+        self._fullscreen_video_window = None
+        self._fullscreen_video_area = None
+        self._fullscreen_video_xid = 0
+        controls_win = self._fullscreen_controls_window
+        self._fullscreen_controls_window = None
+        self._fullscreen_controls_xid = 0
+        self._fullscreen_pointer_last = None
+        self._fullscreen_last_motion = 0.0
+        if controls_win:
+            try:
+                controls_win.set_child(None)
+                controls_win.destroy()
+            except Exception:
+                pass
+        if self.video_controls.get_parent() is not self.left_box:
+            try:
+                parent = self.video_controls.get_parent()
+                if parent and hasattr(parent, 'set_child'):
+                    parent.set_child(None)
+                self.left_box.append(self.video_controls)
+            except Exception:
+                pass
+        self.video_controls.set_visible(bool(self._vlc_player))
+        if self._xlib and self._x_display and self._vlc_child_xid and self._video_surface_xid:
+            self._xlib.XReparentWindow(self._x_display, self._vlc_child_xid, self._video_surface_xid, 0, 0)
+            self._xlib.XSync(self._x_display, 0)
+        if win:
+            try:
+                win.unfullscreen()
+                win.set_child(None)
+                win.destroy()
+            except Exception:
+                pass
+        GLib.idle_add(self._position_vlc_child)
+        GLib.timeout_add(200, self._position_vlc_child)
+
+    def _sync_video_fullscreen_label(self):
+        """Keep exactly the action appropriate to the selected mode visible."""
+        active = bool(self._video_fullscreen_active)
+        self.video_fullscreen_button.set_visible(not active)
+        self.video_window_button.set_visible(active)
+        return False
 
     def _disc_dialog(self, *_):
         dialog = Gtk.Dialog(title=self._t("DVD / Blu-ray abspielen"), transient_for=self, modal=True)
@@ -406,14 +915,32 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         kind = Gtk.ComboBoxText(); kind.append("dvd", "DVD"); kind.append("bluray", "Blu-ray"); kind.set_active_id("dvd")
         device = Gtk.Entry(); device.set_text("/dev/sr0"); device.set_placeholder_text("/dev/sr0")
         box.append(Gtk.Label(label=self._t("Disc-Typ"), xalign=0)); box.append(kind)
-        box.append(Gtk.Label(label=self._t("Optisches Laufwerk"), xalign=0)); box.append(device)
+        box.append(Gtk.Label(label=self._t("Optisches Laufwerk"), xalign=0))
+        device_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        device_row.set_hexpand(True)
+        device.set_hexpand(True)
+        device_row.append(device)
+        eject_button = Gtk.Button(label=self._t("Disc auswerfen"))
+        device_row.append(eject_button)
+        box.append(device_row)
+        eject_status = Gtk.Label(label="", xalign=0, wrap=True)
+        eject_status.add_css_class("dim-label")
+        box.append(eject_status)
+        def eject_disc(*_):
+            drive = device.get_text().strip() or "/dev/sr0"
+            try:
+                subprocess.run(["eject", drive], check=True, timeout=8, capture_output=True, text=True)
+                eject_status.set_text(self._t("Auswerfen angefordert."))
+            except Exception as exc:
+                detail = getattr(exc, "stderr", None) or str(exc)
+                eject_status.set_text(f'{self._t("Auswerfen fehlgeschlagen:")} {detail}'.strip())
+        eject_button.connect("clicked", eject_disc)
         note = Gtk.Label(label=self._t("Blu-ray-Wiedergabe hängt von VLC, libbluray und dem Disc-Schutz ab."), xalign=0, wrap=True); note.add_css_class("dim-label"); box.append(note)
         dialog.get_content_area().append(box)
         def response(d, result):
             if result == Gtk.ResponseType.ACCEPT:
                 try:
-                    proc = play_disc(kind.get_active_id(), device.get_text().strip() or "/dev/sr0")
-                    self._set_status(f"VLC für {kind.get_active_text()} gestartet · PID {proc.pid}")
+                    self._start_embedded_video(disc=(kind.get_active_id(), device.get_text().strip() or "/dev/sr0"))
                 except Exception as exc:
                     self._set_status(f"Disc-Wiedergabe fehlgeschlagen: {exc}")
             d.destroy()
@@ -582,6 +1109,18 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             self.engine.seek_seconds(value)
         return True
     def _tick(self):
+        # Do not raise the native VLC child over the floating controls window.
+        # Its fullscreen geometry is handled by fullscreen resize callbacks.
+        if self._vlc_child_xid and self.video_controls.get_visible() and not self._video_fullscreen_active:
+            self._position_vlc_child()
+        if self._vlc_player and self.video_controls.get_visible():
+            try:
+                self._video_updating_seek = True
+                self.video_seek.set_value(self._vlc_player.position() * 1000.0)
+            except Exception:
+                pass
+            finally:
+                self._video_updating_seek = False
         if self.engine and self.engine.current_path and not str(self.engine.current_path).startswith('CD Track'):
             pos=self.engine.position_seconds();dur=self.engine.duration_seconds();self.elapsed.set_text(fmt_time(pos));self.total.set_text(fmt_time(dur))
             self.seek.set_range(0,max(1,dur));self.seek.set_value(min(pos,max(1,dur)))
@@ -1001,5 +1540,14 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             return True
         self._quitting = True
         send_command("CHILD_QUIT")
+        if self._vlc_player:
+            try:self._vlc_player.close()
+            except Exception:pass
+        if self._xlib and self._x_display:
+            try:
+                if self._vlc_child_xid:self._xlib.XDestroyWindow(self._x_display, self._vlc_child_xid)
+                self._xlib.XFlush(self._x_display)
+                self._xlib.XCloseDisplay(self._x_display)
+            except Exception:pass
         if self.engine:self.engine.close()
         return False

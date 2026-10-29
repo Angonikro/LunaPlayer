@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-VERSION=1.4.2
+VERSION=1.6.0
 STAGE="$ROOT/build/deb"
 rm -rf "$STAGE"
 mkdir -p "$STAGE/DEBIAN" "$STAGE/usr/share/lunaplayer" "$STAGE/usr/bin" "$STAGE/usr/share/applications" "$STAGE/usr/share/icons/hicolor/scalable/apps" "$STAGE/usr/share/pixmaps" "$STAGE/usr/share/doc/lunaplayer" "$STAGE/usr/share/lunaplayer/scripts"
@@ -16,7 +16,7 @@ done
 sed -i "s/^Version: .*/Version: $VERSION/" "$STAGE/DEBIAN/control"
 cp "$ROOT/packaging/debian/changelog" "$STAGE/DEBIAN/changelog"
 cp "$ROOT/packaging/debian/copyright" "$STAGE/usr/share/doc/lunaplayer/copyright"
-for doc in README.md CHANGELOG.md RELEASE_NOTES_1.4.2.md LunaPlayer-1.3.1-Handbuch-DE-EN.pdf; do
+for doc in README.md CHANGELOG.md RELEASE_NOTES_1.6.0.md LunaPlayer-1.3.1-Handbuch-DE-EN.pdf; do
     if [ -f "$ROOT/$doc" ]; then cp "$ROOT/$doc" "$STAGE/usr/share/doc/lunaplayer/"; fi
 done
 cp "$ROOT/main.py" "$STAGE/usr/share/lunaplayer/main.py"

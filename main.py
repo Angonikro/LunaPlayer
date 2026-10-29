@@ -7,7 +7,7 @@ from pathlib import Path
 import tkinter as tk
 from app.settings import load_settings
 
-VERSION = "1.4.2"
+VERSION = "1.6.0"
 SOCKET_PATH = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / f"lunaplayer-controller-{os.getuid()}.sock"
 
 class TrayHost:
@@ -163,6 +163,9 @@ def main():
         save_settings(settings)
     child_path = Path(__file__).resolve().with_name("gtk_app.py")
     env = os.environ.copy(); env["LUNAPLAYER_CONTROLLER_SOCKET"] = str(SOCKET_PATH)
+    # libVLC embeds video through X11; under Wayland use XWayland when available.
+    if env.get("DISPLAY"):
+        env["GDK_BACKEND"] = "x11"
     child = subprocess.Popen([sys.executable, str(child_path), *sys.argv[1:]], env=env)
     def poll_child():
         if child.poll() is not None:

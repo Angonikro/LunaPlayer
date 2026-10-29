@@ -77,3 +77,24 @@ scale slider { background: #dce3ff; min-width: 14px; min-height: 14px; }
 
 /* Keep elapsed and total time labels evenly spaced and readable. */
 .time-label { min-width: 3.6em; font-feature-settings: "tnum"; font-size: 13px; }
+
+
+/* Opaque, readable control bar in the separate fullscreen toplevel. */
+.fullscreen-controls-window { background: rgba(17, 21, 33, 0.96); }
+.fullscreen-video-controls {
+  background: rgba(17, 21, 33, 0.96);
+  color: #f4f6ff;
+  padding: 8px 14px;
+  border-top: 1px solid #414b66;
+  min-height: 68px;
+}
+.fullscreen-video-controls button {
+  background: #30384d;
+  color: #f4f6ff;
+  border: 1px solid #596581;
+  padding: 7px 16px;
+  min-height: 32px;
+}
+.fullscreen-video-controls scale trough { background: #596581; min-height: 6px; }
+.fullscreen-video-controls scale highlight { background: #8191ff; }
+.fullscreen-video-controls scale slider { background: #f4f6ff; min-width: 15px; min-height: 15px; }

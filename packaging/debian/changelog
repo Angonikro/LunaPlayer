@@ -1,3 +1,116 @@
+lunaplayer (1.6.0) stable; urgency=medium
+
+  * Prepare the 1.6.0 release from the 1.5.42 baseline.
+  * Synchronize application, package, and release metadata.
+  * No intentional changes to playback or disc-handling behavior.
+
+ -- LunaPlayer Maintainers <noreply@example.invalid>  Thu, 29 Oct 2026 21:00:00 +0100
+
+lunaplayer (1.5.42) stable; urgency=medium
+
+  * Replace per-window X11 cursor mutation with XFixes hide/show calls to prevent fullscreen auto-hide crashes.
+
+ -- LunaPlayer Maintainers <noreply@example.invalid>  Thu, 29 Oct 2026 20:45:00 +0100
+
+lunaplayer (1.5.41) stable; urgency=medium
+
+  * Hide the mouse pointer after fullscreen controls auto-hide, and restore it on movement.
+
+ -- LunaPlayer Maintainers <noreply@example.invalid>  Thu, 29 Oct 2026 20:30:00 +0100
+
+lunaplayer (1.5.40) stable; urgency=medium
+
+  * Add a disc-eject button to the DVD/Blu-ray dialog only. Keep playback behavior unchanged.
+
+ -- LunaPlayer Maintainers <noreply@example.invalid>  Thu, 29 Oct 2026 20:15:00 +0100
+
+lunaplayer (1.5.39) stable; urgency=medium
+
+  * Restore window-mode stop behavior from 1.5.35 while preserving fullscreen restart fix.
+
+ -- LunaPlayer Maintainers <noreply@example.invalid>  Thu, 29 Oct 2026 19:45:00 +0100
+
+lunaplayer (1.5.36) stable; urgency=medium
+
+  * Change video control to Play after Stop and restart the current media from the beginning on click.
+
+ -- LunaPlayer Team <noreply@example.com>  Thu, 29 Oct 2026 19:40:00 +0100
+
+lunaplayer (1.5.34) stable; urgency=medium
+
+  * Stop in fullscreen stops video without closing fullscreen window.
+
+ -- LunaPlayer Team <noreply@example.com>  Thu, 29 Oct 2026 19:30:00 +0100
+
+lunaplayer (1.5.33) stable; urgency=medium
+
+  * Show the "Fenster" action in fullscreen and "Vollbild" in window mode.
+
+
+  * Add floating fullscreen video controls that appear on mouse movement and hide after two seconds of inactivity.
+  * Keep fullscreen video sizing independent from the normal player window and preserve the existing fullscreen implementation.
+
+ -- Goldisoft <goldisoft@example.invalid>  Thu, 29 Oct 2026 19:15:00 +0100
+
+lunaplayer (1.5.29) stable; urgency=medium
+
+  * Prevent the regular video-position update from resizing the reparented VLC child back to the normal window dimensions while fullscreen is active.
+
+ -- Goldisoft <goldisoft@example.invalid>  Thu, 29 Oct 2026 19:00:00 +0100
+
+lunaplayer (1.5.28) stable; urgency=medium
+
+  * Preserve the dedicated fullscreen window from 1.5.21 and use physical X11 screen dimensions for the VLC child, based on the sizing fix from 1.5.25.
+
+ -- Goldisoft <goldisoft@example.invalid>  Thu, 29 Oct 2026 18:35:00 +0100
+
+lunaplayer (1.5.20) stable; urgency=medium
+
+  * Fix fullscreen button label after returning to window mode.
+
+ -- LunaPlayer Project <noreply@example.invalid>  Thu, 29 Oct 2026 16:45:00 +0100
+
+lunaplayer (1.5.1) stable; urgency=medium
+
+  * Synchronize fullscreen toggle label with GTK window state.
+
+ -- LunaPlayer Project <noreply@example.invalid>  Thu, 29 Oct 2026 16:40:00 +0100
+
+lunaplayer (1.5.0) stable; urgency=medium
+
+  * Rework fullscreen transition: defer/retry GTK fullscreen request after layout changes and hide window decorations.
+  * Restore previous decorations and player layout when leaving fullscreen.
+
+ -- LunaPlayer Project <noreply@example.invalid>  Thu, 29 Oct 2026 16:30:00 +0100
+
+lunaplayer (1.4.7) stable; urgency=medium
+
+  * Fix translucent VLC video output by creating an opaque 24-bit TrueColor X11 child surface.
+  * Keep the change focused on the video surface; retain existing music controls and playlist.
+
+ -- LunaPlayer Project <noreply@example.invalid>  Thu, 29 Oct 2026 16:45:00 +0100
+
+lunaplayer (1.4.5) stable; urgency=medium
+
+  * Improve VLC X11 child-window background and fullscreen geometry refresh.
+
+ -- LunaPlayer Project <noreply@example.invalid>  Thu, 29 Oct 2026 16:00:00 +0100
+
+lunaplayer (1.4.4) stable; urgency=medium
+
+  * Improve X11 VLC child-window stacking, opaque clearing and synchronization.
+  * Reposition the embedded VLC surface after playback starts.
+
+ -- Goldisoft <info@goldisoft.example>  Thu, 29 Oct 2026 16:00:00 +0100
+
+lunaplayer (1.4.3) stable; urgency=medium
+
+  * Embed VLC video, DVD and Blu-ray playback inside the LunaPlayer window.
+  * Add integrated video pause/play, stop, seek and fullscreen controls.
+  * Declare python3-vlc, libvlc5 and vlc-plugin-base dependencies.
+
+ -- Goldisoft <info@goldisoft.example>  Thu, 29 Oct 2026 15:30:00 +0100
+
 lunaplayer (1.4.2) stable; urgency=medium
 
   * Synchronize the in-app About dialog and main-window version display with the package version.
