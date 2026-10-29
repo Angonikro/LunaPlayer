@@ -1,12 +1,8 @@
-# LunaPlayer 1.3.4
+# LunaPlayer 1.4.1
 
-**Ein Musikplayer für Linux · Goldisoft 2026**
+**Ein Musik und Video Player für Linux · Goldisoft 2026**
 
-LunaPlayer ist ein Desktop-Musikplayer für Linux. Dieses Repository enthält den Quellcode, die benötigten Projektdateien und Skripte zum Erstellen des Debian-Pakets.
-
-![LunaPlayer](lunaplayer.png)
-
-[Github Seite](https://github.com/Angonikro/LunaPlayer/)
+LunaPlayer ist ein Desktop-Musikplayer und Video Player für Linux. Dieses Repository enthält den Quellcode, die benötigten Projektdateien und Skripte zum Erstellen des Debian-Pakets.
 
 ## Funktionen
 
@@ -23,6 +19,13 @@ LunaPlayer ist ein Desktop-Musikplayer für Linux. Dieses Repository enthält de
 - System-Tray verwenden, sofern die Desktop-Umgebung Statussymbole unterstützt
 - Sprachwahl Deutsch/Englisch über **Einstellungen → Sprache / Language**; zusätzlich ist die Auswahl in der Kopfzeile verfügbar
 
+## Video, DVD und Blu-ray
+
+- Videodateien wie MKV, MP4, AVI, MOV, M4V, WebM, MPEG/MPG, TS/M2TS, WMV, FLV, OGV und 3GP über VLC öffnen; mehrere ausgewählte Dateien werden an VLC übergeben.
+- DVD und Blu-ray über **DVD / Blu-ray** starten. Das optische Laufwerk kann im Dialog angegeben werden (Standard: `/dev/sr0`).
+- LunaPlayer bleibt der Name und das bestehende Musikprogramm bleibt erhalten. Die Videowiedergabe öffnet ein eigenes VLC-Fenster.
+- Blu-ray-Menüs und geschützte Discs werden nicht garantiert unterstützt; dies hängt von VLC, `libbluray`, dem Laufwerk und dem Disc-Schutz ab.
+
 ## Desktop-Symbol
 
 Das Debian-Paket installiert das LunaPlayer-Symbol sowohl als SVG unter `hicolor/scalable/apps` als auch als PNG-Fallback unter `/usr/share/pixmaps/lunaplayer.png`. Der Startmenüeintrag verwendet den absoluten PNG-Pfad, damit das Symbol auch auf Desktops ohne zuverlässig aktualisierten SVG-Icon-Cache angezeigt wird.
@@ -31,19 +34,21 @@ Das Debian-Paket installiert das LunaPlayer-Symbol sowohl als SVG unter `hicolor
 
 - Linux mit einer unterstützten Desktop-Umgebung
 - Python 3 und die im Projekt bzw. im Debian-Paket angegebenen Abhängigkeiten
+- Für Video-Wiedergabe: VLC (`vlc`); wird durch das DEB automatisch als Abhängigkeit installiert
+- Für DVD-/Blu-ray-Unterstützung: optional `libdvdnav4`, `libdvdread8` und `libbluray2` (im DEB als Empfehlungen aufgeführt)
 - Für Audio-CD-Funktionen: ein erkanntes CD-Laufwerk sowie die dafür benötigten Systemwerkzeuge
 - Für Online-Abfragen: eine funktionierende Internetverbindung
 
-Die konkret benötigten Pakete können je nach Distribution und installierter Version variieren. Das Debian-Paket enthält die für die Paketinstallation definierten Abhängigkeiten.
+Die konkret benötigten Pakete können je nach Distribution und installierter Version variieren. Das Debian-Paket installiert VLC automatisch. Optionale DVD-/Blu-ray-Bibliotheken können bei Bedarf mit `sudo apt install libdvdnav4 libdvdread8 libbluray2` ergänzt werden.
 
 ## Installation auf Debian / Raspberry Pi OS
 
-1. Laden Sie `lunaplayer_1.3.4_all.deb` herunter.
+1. Laden Sie `lunaplayer_1.4.1_all.deb` herunter.
 2. Öffnen Sie ein Terminal im Download-Ordner.
 3. Installieren Sie das Paket:
 
    ```bash
-   sudo apt install ./lunaplayer_1.3.4_all.deb
+   sudo apt install ./lunaplayer_1.4.1_all.deb
    ```
 
 4. Starten Sie LunaPlayer über das Anwendungsmenü. Falls der Startbefehl verfügbar ist, können Sie auch `lunaplayer` im Terminal verwenden.
@@ -67,7 +72,7 @@ Diese Schritte sind für Debian 13 / Raspberry Pi OS auf einem Desktop-System ge
 
    ```bash
    cd ~/Downloads
-   unzip LunaPlayer_1.3.4_GITHUB.zip
+   unzip LunaPlayer_1.4.1_GITHUB.zip
    cd LunaPlayer
    ```
 
@@ -77,7 +82,7 @@ Diese Schritte sind für Debian 13 / Raspberry Pi OS auf einem Desktop-System ge
 
    ```bash
    sudo apt update
-   sudo apt install python3 python3-tk python3-gi gir1.2-gtk-4.0 gir1.2-gtk-3.0 python3-gst-1.0 python3-mutagen gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav libcdio-utils cd-discid eject unzip
+   sudo apt install python3 python3-tk python3-gi gir1.2-gtk-4.0 gir1.2-gtk-3.0 python3-gst-1.0 python3-mutagen vlc gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav libcdio-utils cd-discid eject unzip
    ```
 
 3. LunaPlayer direkt aus dem entpackten Projektordner starten:
@@ -161,5 +166,3 @@ Die Lizenzbedingungen stehen in der Datei `LICENSE`, sofern sie in diesem Reposi
 \n\n### Sprache sofort umstellen\n\nDie Auswahl unter **Einstellungen → Sprache / Language** speichert Deutsch oder English und baut das Fenster direkt neu auf. Ein manueller Neustart sollte dafür nicht nötig sein.\n
 ### Debian start-menu icon
 The DEB package installs the LunaPlayer desktop entry and SVG icon. Its maintainer scripts refresh the desktop database and hicolor icon cache after installation so the application can appear in the start menu with its icon.
-
-73 de DO2QG Andreas

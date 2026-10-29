@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-VERSION=1.3.4
+VERSION=1.4.1
 STAGE="$ROOT/build/deb"
 rm -rf "$STAGE"
 mkdir -p "$STAGE/DEBIAN" "$STAGE/usr/share/lunaplayer" "$STAGE/usr/bin" "$STAGE/usr/share/applications" "$STAGE/usr/share/icons/hicolor/scalable/apps" "$STAGE/usr/share/pixmaps" "$STAGE/usr/share/doc/lunaplayer" "$STAGE/usr/share/lunaplayer/scripts"
@@ -16,7 +16,7 @@ done
 sed -i "s/^Version: .*/Version: $VERSION/" "$STAGE/DEBIAN/control"
 cp "$ROOT/packaging/debian/changelog" "$STAGE/DEBIAN/changelog"
 cp "$ROOT/packaging/debian/copyright" "$STAGE/usr/share/doc/lunaplayer/copyright"
-for doc in README.md CHANGELOG.md RELEASE_NOTES_1.3.4.md LunaPlayer-1.3.1-Handbuch-DE-EN.pdf; do
+for doc in README.md CHANGELOG.md RELEASE_NOTES_1.4.1.md LunaPlayer-1.3.1-Handbuch-DE-EN.pdf; do
     if [ -f "$ROOT/$doc" ]; then cp "$ROOT/$doc" "$STAGE/usr/share/doc/lunaplayer/"; fi
 done
 cp "$ROOT/main.py" "$STAGE/usr/share/lunaplayer/main.py"
@@ -41,6 +41,10 @@ exec /usr/bin/python3 /usr/share/lunaplayer/main.py "$@"
 WRAPPER
 chmod 755 "$STAGE/usr/bin/lunaplayer"
 find "$STAGE" -type d -exec chmod 755 {} +
+find "$STAGE" -type d -exec chmod 755 {} +
+find "$STAGE" -type f -exec chmod 644 {} +
+find "$STAGE"/DEBIAN -maxdepth 1 -type f \( -name postinst -o -name postrm \) -exec chmod 755 {} +
+chmod 755 "$STAGE/usr/bin/lunaplayer" "$STAGE/usr/share/lunaplayer/install_desktop_launcher.sh" "$STAGE/usr/share/lunaplayer/create_desktop_entry.sh" "$STAGE/usr/share/lunaplayer/scripts/create_desktop_entry.sh"
 find "$STAGE" -type d -exec chmod g-s {} +
 mkdir -p "$ROOT/dist"
 dpkg-deb --build --root-owner-group "$STAGE" "$ROOT/dist/lunaplayer_${VERSION}_all.deb"

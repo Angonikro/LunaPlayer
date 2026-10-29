@@ -15,6 +15,7 @@ import threading
 from app.controller_client import send_command
 from app.equalizer import PRESETS
 from app.i18n import tr
+from app.vlc_player import VIDEO_EXTENSIONS, VIDEO_FILTER_LABEL, play_video, play_disc
 
 def fmt_time(seconds):
     seconds=max(0,int(seconds)); return f'{seconds//60}:{seconds%60:02d}'
@@ -52,6 +53,8 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         file_menu.append(self._t("Dateien hinzufügen…"), "win.add-files")
         file_menu.append(self._t("Ordner auswählen…"), "win.choose-folder")
         file_menu.append(self._t("CD abspielen…"), "win.play-cd")
+        file_menu.append(self._t("Videos öffnen…"), "win.open-videos")
+        file_menu.append(self._t("DVD / Blu-ray abspielen…"), "win.play-disc")
         file_menu.append(self._t("Beenden"), "win.quit")
         menu.append_submenu(self._t("Datei"), file_menu)
         settings_menu = Gio.Menu()
@@ -75,6 +78,8 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             ("add-files", lambda *_: self._choose_files()),
             ("choose-folder", lambda *_: self._choose_folder()),
             ("play-cd", lambda *_: self._cd_dialog()),
+            ("open-videos", lambda *_: self._choose_videos()),
+            ("play-disc", lambda *_: self._disc_dialog()),
             ("quit", lambda *_: self._quit_app()),
             ("audio-device", lambda *_: self._audio_device_dialog()),
             ("cddb-settings", lambda *_: self._cddb_settings_dialog()),
@@ -205,7 +210,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
     def _about_dialog(self, *_args):
         dialog = Gtk.AboutDialog(transient_for=self, modal=False)
         dialog.set_program_name("LunaPlayer")
-        dialog.set_version("1.3.4")
+        dialog.set_version("1.4.0")
         dialog.set_comments("Deine Musik. Dein Klang.")
         dialog.set_copyright("© Goldisoft 2026")
         dialog.set_license_type(Gtk.License.GPL_3_0)
@@ -300,7 +305,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         logo=Gtk.Label(label=self._t('☾')); logo.add_css_class('moon-logo')
         titlebox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
         name=Gtk.Label(label=self._t('LunaPlayer'),xalign=0); name.add_css_class('brand')
-        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.3.4',xalign=0); subtitle.add_css_class('muted')
+        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.4.0',xalign=0); subtitle.add_css_class('muted')
         titlebox.append(name);titlebox.append(subtitle);header.append(logo);header.append(titlebox)
         spacer=Gtk.Box();spacer.set_hexpand(True);header.append(spacer)
         language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
@@ -309,7 +314,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         self.language_selector.set_selected(1 if self.settings.get("language", "de") == "en" else 0)
         self.language_selector.connect("notify::selected", self._language_changed)
         language_box.append(self.language_selector); header.append(language_box)
-        for label,callback in [('＋ Dateien',self._choose_files),('Ordner',self._choose_folder),('CD abspielen',self._cd_dialog),('Equalizer',self._equalizer_dialog),('Tags bearbeiten',self._edit_tags_dialog)]:
+        for label,callback in [('＋ Dateien',self._choose_files),('Ordner',self._choose_folder),('CD abspielen',self._cd_dialog),('Videos',self._choose_videos),('DVD / Blu-ray',self._disc_dialog),('Equalizer',self._equalizer_dialog),('Tags bearbeiten',self._edit_tags_dialog)]:
             b=Gtk.Button(label=self._t(label));b.connect('clicked',callback);header.append(b)
         self.tray_toggle=Gtk.CheckButton(label=self._t('System-Tray'))
         self.tray_toggle.set_tooltip_text(self._t('System-Tray aktivieren: Fenster beim Schließen im Tray behalten'))
@@ -373,6 +378,47 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             self._set_status(f'{added} Audiodatei(en) hinzugefügt')
             if self.playlist.current() and self.engine and not self.engine.current_path:self._play_path(self.playlist.current())
         dialog.destroy()
+    def _choose_videos(self, *_):
+        dialog = Gtk.FileChooserNative.new(self._t("Videodateien öffnen"), self, Gtk.FileChooserAction.OPEN, self._t("Abspielen"), self._t("Abbrechen"))
+        dialog.set_select_multiple(True)
+        filt = Gtk.FileFilter(); filt.set_name(VIDEO_FILTER_LABEL)
+        for ext in sorted(VIDEO_EXTENSIONS):
+            filt.add_pattern("*" + ext); filt.add_pattern("*" + ext.upper())
+        dialog.add_filter(filt)
+        dialog.connect("response", self._videos_chosen); dialog.show()
+
+    def _videos_chosen(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            paths = [f.get_path() for f in dialog.get_files() if f.get_path()]
+            try:
+                proc = play_video(paths)
+                self._set_status(f"VLC gestartet: {len(paths)} Video(s) · PID {proc.pid}")
+            except Exception as exc:
+                self._set_status(f"Video-Wiedergabe fehlgeschlagen: {exc}")
+        dialog.destroy()
+
+    def _disc_dialog(self, *_):
+        dialog = Gtk.Dialog(title=self._t("DVD / Blu-ray abspielen"), transient_for=self, modal=True)
+        dialog.add_button(self._t("Abbrechen"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(self._t("Abspielen"), Gtk.ResponseType.ACCEPT)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        box.set_margin_top(14); box.set_margin_bottom(14); box.set_margin_start(14); box.set_margin_end(14)
+        kind = Gtk.ComboBoxText(); kind.append("dvd", "DVD"); kind.append("bluray", "Blu-ray"); kind.set_active_id("dvd")
+        device = Gtk.Entry(); device.set_text("/dev/sr0"); device.set_placeholder_text("/dev/sr0")
+        box.append(Gtk.Label(label=self._t("Disc-Typ"), xalign=0)); box.append(kind)
+        box.append(Gtk.Label(label=self._t("Optisches Laufwerk"), xalign=0)); box.append(device)
+        note = Gtk.Label(label=self._t("Blu-ray-Wiedergabe hängt von VLC, libbluray und dem Disc-Schutz ab."), xalign=0, wrap=True); note.add_css_class("dim-label"); box.append(note)
+        dialog.get_content_area().append(box)
+        def response(d, result):
+            if result == Gtk.ResponseType.ACCEPT:
+                try:
+                    proc = play_disc(kind.get_active_id(), device.get_text().strip() or "/dev/sr0")
+                    self._set_status(f"VLC für {kind.get_active_text()} gestartet · PID {proc.pid}")
+                except Exception as exc:
+                    self._set_status(f"Disc-Wiedergabe fehlgeschlagen: {exc}")
+            d.destroy()
+        dialog.connect("response", response); dialog.present()
+
     def _load_default_music_folder(self):
         # Use a previously selected folder if it still exists; otherwise discover Musik/Music.
         saved = self.settings.get('music_folder') or self.settings.get('last_folder')
