@@ -210,7 +210,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
     def _about_dialog(self, *_args):
         dialog = Gtk.AboutDialog(transient_for=self, modal=False)
         dialog.set_program_name("LunaPlayer")
-        dialog.set_version("1.4.0")
+        dialog.set_version("1.4.2")
         dialog.set_comments("Deine Musik. Dein Klang.")
         dialog.set_copyright("© Goldisoft 2026")
         dialog.set_license_type(Gtk.License.GPL_3_0)
@@ -305,7 +305,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         logo=Gtk.Label(label=self._t('☾')); logo.add_css_class('moon-logo')
         titlebox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
         name=Gtk.Label(label=self._t('LunaPlayer'),xalign=0); name.add_css_class('brand')
-        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.4.0',xalign=0); subtitle.add_css_class('muted')
+        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.4.2',xalign=0); subtitle.add_css_class('muted')
         titlebox.append(name);titlebox.append(subtitle);header.append(logo);header.append(titlebox)
         spacer=Gtk.Box();spacer.set_hexpand(True);header.append(spacer)
         language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)

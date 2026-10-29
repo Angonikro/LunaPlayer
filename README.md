@@ -1,12 +1,8 @@
-# LunaPlayer 1.4.1
+# LunaPlayer 1.4.2
 
-**Ein Musik und Video Player für Linux · Goldisoft 2026**
+**Ein Musikplayer und Video Player für Linux · Goldisoft 2026**
 
 LunaPlayer ist ein Desktop-Musikplayer und Video Player für Linux. Dieses Repository enthält den Quellcode, die benötigten Projektdateien und Skripte zum Erstellen des Debian-Pakets.
-
-![LunaPlayer](lunaplayer2.png)
-
-[Github Seite](https://github.com/Angonikro/LunaPlayer/)
 
 ## Funktionen
 
@@ -45,14 +41,26 @@ Das Debian-Paket installiert das LunaPlayer-Symbol sowohl als SVG unter `hicolor
 
 Die konkret benötigten Pakete können je nach Distribution und installierter Version variieren. Das Debian-Paket installiert VLC automatisch. Optionale DVD-/Blu-ray-Bibliotheken können bei Bedarf mit `sudo apt install libdvdnav4 libdvdread8 libbluray2` ergänzt werden.
 
+## Sprache einstellen
+
+Öffnen Sie **Einstellungen → Sprache / Language** und wählen Sie **Deutsch** oder **English**. Die Auswahl wird in `~/.config/lunaplayer/settings.json` gespeichert. Starten Sie LunaPlayer danach neu, damit alle Texte aktualisiert werden. Einige Meldungen externer Bibliotheken oder Systemdienste können weiterhin in einer anderen Sprache erscheinen.
+
+## System-Tray
+
+Das Tray-Verhalten hängt von der Desktop-Umgebung und deren Unterstützung für Statussymbole ab. Wenn das Symbol nicht erscheint, prüfen Sie die Tray-/Panel-Unterstützung Ihrer Desktop-Umgebung. Für eine zuverlässige Fehlerdiagnose kann ein Start aus dem Terminal hilfreich sein.
+
+## Audio-CDs und Online-Metadaten
+
+CD-Erkennung und Online-Metadaten hängen unter anderem vom optischen Laufwerk, den installierten Systemwerkzeugen, der Netzwerkverbindung und der Verfügbarkeit externer Dienste ab. Deshalb können Online-Ergebnisse nicht garantiert werden.
+
 ## Installation auf Debian / Raspberry Pi OS
 
-1. Laden Sie `lunaplayer_1.4.1_all.deb` herunter.
+1. Laden Sie `lunaplayer_1.4.2_all.deb` herunter.
 2. Öffnen Sie ein Terminal im Download-Ordner.
 3. Installieren Sie das Paket:
 
    ```bash
-   sudo apt install ./lunaplayer_1.4.1_all.deb
+   sudo apt install ./lunaplayer_1.4.2_all.deb
    ```
 
 4. Starten Sie LunaPlayer über das Anwendungsmenü. Falls der Startbefehl verfügbar ist, können Sie auch `lunaplayer` im Terminal verwenden.
@@ -76,7 +84,7 @@ Diese Schritte sind für Debian 13 / Raspberry Pi OS auf einem Desktop-System ge
 
    ```bash
    cd ~/Downloads
-   unzip LunaPlayer_1.4.1_GITHUB.zip
+   unzip LunaPlayer_1.4.2_GITHUB.zip
    cd LunaPlayer
    ```
 
@@ -129,18 +137,6 @@ Diese Version ergänzt `.m4a` und `.mp4` als auswählbare und durchsuchbare Audi
 ## Version 1.3.2 – Desktop-Starter
 
 Diese Version ergänzt Skripte zum Erstellen eines Desktop-Symbols sowohl für die ZIP-/Quellcode-Version als auch für die DEB-Installation. Die Anleitung oben beschreibt die nötigen `chmod +x`-Befehle. Die bisherige Installations-, Funktions- und Fehlerbehebungsdokumentation bleibt erhalten.
-
-## Sprache einstellen
-
-Öffnen Sie **Einstellungen → Sprache / Language** und wählen Sie **Deutsch** oder **English**. Die Auswahl wird in `~/.config/lunaplayer/settings.json` gespeichert. Starten Sie LunaPlayer danach neu, damit alle Texte aktualisiert werden. Einige Meldungen externer Bibliotheken oder Systemdienste können weiterhin in einer anderen Sprache erscheinen.
-
-## System-Tray
-
-Das Tray-Verhalten hängt von der Desktop-Umgebung und deren Unterstützung für Statussymbole ab. Wenn das Symbol nicht erscheint, prüfen Sie die Tray-/Panel-Unterstützung Ihrer Desktop-Umgebung. Für eine zuverlässige Fehlerdiagnose kann ein Start aus dem Terminal hilfreich sein.
-
-## Audio-CDs und Online-Metadaten
-
-CD-Erkennung und Online-Metadaten hängen unter anderem vom optischen Laufwerk, den installierten Systemwerkzeugen, der Netzwerkverbindung und der Verfügbarkeit externer Dienste ab. Deshalb können Online-Ergebnisse nicht garantiert werden.
 
 ## Projektstruktur
 

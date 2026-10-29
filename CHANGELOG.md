@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.2
+- Korrigiert die Versionsanzeige in der App: Hauptfenster und Info-Dialog zeigen jetzt 1.4.2.
+- Behält die VLC-Video-, DVD- und Blu-ray-Integration sowie alle bisherigen Musikfunktionen bei.
+
 ## 1.4.0
 - Video-Wiedergabe mit VLC ergänzt.
 - DVD-/Blu-ray-Start mit Laufwerksauswahl ergänzt.
