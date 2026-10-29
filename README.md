@@ -4,6 +4,10 @@
 
 LunaPlayer ist ein Desktop-Musikplayer und Video Player für Linux. Dieses Repository enthält den Quellcode, die benötigten Projektdateien und Skripte zum Erstellen des Debian-Pakets.
 
+![LunaPlayer](lunaplayer.png)
+
+[Github Seite](https://github.com/Angonikro/LunaPlayer/)
+
 ## Funktionen
 
 - Unterstützte Audioformate: **MP3 (`.mp3`), WAV (`.wav`), Ogg Vorbis (`.ogg`, `.oga`), M4A (`.m4a`) und MP4-Audiodateien (`.mp4`, ohne Videoausgabe)**
@@ -166,3 +170,5 @@ Die Lizenzbedingungen stehen in der Datei `LICENSE`, sofern sie in diesem Reposi
 \n\n### Sprache sofort umstellen\n\nDie Auswahl unter **Einstellungen → Sprache / Language** speichert Deutsch oder English und baut das Fenster direkt neu auf. Ein manueller Neustart sollte dafür nicht nötig sein.\n
 ### Debian start-menu icon
 The DEB package installs the LunaPlayer desktop entry and SVG icon. Its maintainer scripts refresh the desktop database and hicolor icon cache after installation so the application can appear in the start menu with its icon.
+
+73 de DO2QG Andreas
