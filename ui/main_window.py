@@ -90,7 +90,6 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         bar = Gtk.PopoverMenuBar.new_from_model(menu)
         root.append(bar)
         self.menu_bar = bar
-        return bar
         actions = [
             ("add-files", lambda *_: self._choose_files()),
             ("choose-folder", lambda *_: self._choose_folder()),
@@ -112,6 +111,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             action = Gio.SimpleAction.new(name, None)
             action.connect("activate", callback)
             self.add_action(action)
+        return bar
 
     def _set_language(self, language):
         if language not in ("de", "en"):
@@ -208,7 +208,10 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             ("6. Tags bearbeiten", "Wähle einen Titel in der Playlist aus und klicke Tags bearbeiten, um Titel, Interpret, Album, Jahr, Genre und Tracknummer zu bearbeiten. Speichern schreibt die Änderungen in die Musikdatei."),
             ("7. Equalizer", "Öffne Equalizer und wähle ein Klangprofil oder passe die Frequenzbänder an. Jede Änderung wird automatisch gespeichert und beim nächsten Start wiederhergestellt. Über „Klangprofil speichern…“ kannst du eigene Profile benennen und später wieder auswählen. Falls das benötigte GStreamer-Equalizer-Plugin fehlt, meldet LunaPlayer, dass der Equalizer nicht verfügbar ist."),
             ("8. Design und System-Tray", "Unter Einstellungen kannst du zwischen hellem und dunklem Design wechseln. Aktiviere System-Tray, wenn LunaPlayer beim Schließen im Hintergrund weiterlaufen soll. Ohne aktivierten Tray beendet das Schließen das Programm. Die Tray-Anzeige hängt von der Desktop-Unterstützung ab."),
-            ("9. Beenden", "Wähle Datei → Beenden, um LunaPlayer vollständig zu schließen. Wenn der System-Tray aktiviert ist, beendet ein normales Schließen des Fensters die Anwendung nicht, sondern blendet sie aus; nutze dann Beenden im Programm oder im Tray-Menü."),
+            ("9. Video-Dateien abspielen", "Wähle Datei → Videos öffnen… oder die Schaltfläche Videos. Wähle eine oder mehrere Videodateien aus; LunaPlayer spielt sie über VLC direkt im Programmfenster ab. Die verfügbaren Dateiformate hängen von den installierten VLC-Codecs ab. Mit Wiedergabe/Pause und Stopp steuerst du die Wiedergabe. Der Positionsregler ermöglicht das Springen innerhalb des Videos."),
+            ("10. Vollbild und Fenstermodus", "Klicke während der Videowiedergabe auf Vollbild, um das Video im Vollbild anzuzeigen. Die Bedienelemente werden nach kurzer Zeit ausgeblendet und erscheinen wieder, wenn du die Maus bewegst. Mit Fenster oder Esc kehrst du zur normalen Fensteransicht zurück."),
+            ("11. DVD und Blu-ray abspielen", "Lege eine DVD oder Blu-ray ein und wähle Datei → DVD / Blu-ray abspielen… oder die Schaltfläche DVD / Blu-ray. Wähle das optische Laufwerk und starte die Wiedergabe. Die Wiedergabe läuft über VLC. Ob eine Disc abgespielt werden kann, hängt von den installierten VLC-Plugins, den erforderlichen Disc-Bibliotheken, dem Laufwerk und gegebenenfalls dem Kopierschutz ab. Blu-ray-Menüs und bestimmte geschützte Discs werden möglicherweise nicht unterstützt."),
+            ("12. Beenden", "Wähle Datei → Beenden, um LunaPlayer vollständig zu schließen. Wenn der System-Tray aktiviert ist, beendet ein normales Schließen des Fensters die Anwendung nicht, sondern blendet sie aus; nutze dann Beenden im Programm oder im Tray-Menü."),
         ]
         for title, body in sections:
             label = Gtk.Label(label=self._t(title), xalign=0)
@@ -236,7 +239,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
     def _about_dialog(self, *_args):
         dialog = Gtk.AboutDialog(transient_for=self, modal=False)
         dialog.set_program_name("LunaPlayer")
-        dialog.set_version("1.4.7")
+        dialog.set_version("1.6.2")
         dialog.set_comments("Deine Musik. Dein Klang.")
         dialog.set_copyright("© Goldisoft 2026")
         dialog.set_license_type(Gtk.License.GPL_3_0)
@@ -331,7 +334,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         logo=Gtk.Label(label=self._t('☾')); logo.add_css_class('moon-logo')
         titlebox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
         name=Gtk.Label(label=self._t('LunaPlayer'),xalign=0); name.add_css_class('brand')
-        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.0',xalign=0); subtitle.add_css_class('muted')
+        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.2',xalign=0); subtitle.add_css_class('muted')
         titlebox.append(name);titlebox.append(subtitle);header.append(logo);header.append(titlebox)
         spacer=Gtk.Box();spacer.set_hexpand(True);header.append(spacer)
         language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)

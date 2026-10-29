@@ -1,3 +1,10 @@
+lunaplayer (1.6.2) stable; urgency=medium
+
+  * Add English translations for the fullscreen and window mode buttons.
+  * No playback or disc-handling changes.
+
+ -- LunaPlayer Maintainers <noreply@example.invalid>  Thu, 29 Oct 2026 21:20:00 +0100
+
 lunaplayer (1.6.0) stable; urgency=medium
 
   * Prepare the 1.6.0 release from the 1.5.42 baseline.

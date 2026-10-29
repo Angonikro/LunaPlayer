@@ -1,14 +1,8 @@
-# LunaPlayer 1.6.0
+# LunaPlayer 1.6.2
 
 **Ein Musikplayer und Video Player für Linux · Goldisoft 2026**
 
-LunaPlayer ist ein Desktop-Musikplayer und Video Player für Linux. Dieses Repository enthält den Quellcode, die benötigten Projektdateien und Skripte zum Erstellen des Debian-Pakets.
-
-![LunaPlayer](lunaplayer2.png)
-
-![LunaPlayer](lunaplayer3.png)
-
-[Github Seite](https://github.com/Angonikro/LunaPlayer/)
+LunaPlayer ist ein Desktop-Musikplayer und Video Player für Linux und Raspberry. Dieses Repository enthält den Quellcode, die benötigten Projektdateien und Skripte zum Erstellen des Debian-Pakets.
 
 ## Funktionen
 
@@ -57,12 +51,12 @@ Die konkret benötigten Pakete können je nach Distribution und installierter Ve
 
 ## Installation auf Debian / Raspberry Pi OS
 
-1. Laden Sie `lunaplayer_1.6.0_all.deb` herunter.
+1. Laden Sie `lunaplayer_1.6.2_all.deb` herunter.
 2. Öffnen Sie ein Terminal im Download-Ordner.
 3. Installieren Sie das Paket:
 
    ```bash
-   sudo apt install ./lunaplayer_1.6.0_all.deb
+   sudo apt install ./lunaplayer_1.6.2_all.deb
    ```
 
 4. Starten Sie LunaPlayer über das Anwendungsmenü. Falls der Startbefehl verfügbar ist, können Sie auch `lunaplayer` im Terminal verwenden.
@@ -86,7 +80,7 @@ Diese Schritte sind für Debian 13 / Raspberry Pi OS auf einem Desktop-System ge
 
    ```bash
    cd ~/Downloads
-   unzip LunaPlayer_1.6.0_GITHUB.zip
+   unzip LunaPlayer_1.6.2_GITHUB.zip
    cd LunaPlayer
    ```
 

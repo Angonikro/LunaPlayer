@@ -1,5 +1,14 @@
-## 1.6.0
+## 1.6.2
 - VLC wiedergabe in die App integriert DVD Blu-ray Video
+- In-App-Anleitung um Video-Dateien, Vollbild/Fenstermodus sowie DVD- und Blu-ray-Wiedergabe ergänzt.
+- Englische Übersetzungen für alle neuen Hilfethemen ergänzt.
+- Hinweise zu VLC, erforderlichen Disc-Bibliotheken und möglichen Einschränkungen bei geschützten Discs aufgenommen.
+
+## 1.6.1
+- Fehlende englische Übersetzungen für „Vollbild“ (Fullscreen) und „Fenster“ (Window) ergänzt.
+- Keine Änderungen an Wiedergabe oder Disc-Funktionen.
+
+## 1.6.0
 - Programm- und Paketversion auf 1.6.0 vereinheitlicht; Grundlage ist der Quellcode von Version 1.5.42.
 - Keine beabsichtigten Änderungen an DVD-/Blu-ray-Wiedergabe, Stopp/Neustart, Vollbildgröße oder Mauszeigersteuerung.
 
