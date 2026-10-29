@@ -145,8 +145,6 @@ Die Lizenzbedingungen stehen in der Datei `LICENSE`, sofern sie in diesem Reposi
 
 **Goldisoft · 2026**
 \n\n### Sprache sofort umstellen\n\nDie Auswahl unter **Einstellungen → Sprache / Language** speichert Deutsch oder English und baut das Fenster direkt neu auf. Ein manueller Neustart sollte dafür nicht nötig sein.\n
-### Debian start-menu icon
-The DEB package installs the LunaPlayer desktop entry and SVG icon. Its maintainer scripts refresh the desktop database and hicolor icon cache after installation so the application can appear in the start menu with its icon.
 
 73 de DO2QG Andreas
 
