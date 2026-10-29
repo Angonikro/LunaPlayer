@@ -4,6 +4,12 @@
 
 LunaPlayer ist ein Desktop-Musikplayer und Video Player für Linux und Raspberry. Dieses Repository enthält den Quellcode, die benötigten Projektdateien und Skripte zum Erstellen des Debian-Pakets.
 
+![LunaPlayer](lunaplayer2.png)
+
+![LunaPlayer](lunaplayer3.png)
+
+[Github Seite](https://github.com/Angonikro/LunaPlayer/)
+
 ## Funktionen
 
 - Unterstützte Audioformate: **MP3 (`.mp3`), WAV (`.wav`), Ogg Vorbis (`.ogg`, `.oga`), M4A (`.m4a`) und MP4-Audiodateien (`.mp4`, ohne Videoausgabe)**
