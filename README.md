@@ -4,7 +4,7 @@
 
 LunaPlayer ist ein Desktop-Musikplayer und Video Player für Linux. Dieses Repository enthält den Quellcode, die benötigten Projektdateien und Skripte zum Erstellen des Debian-Pakets.
 
-![LunaPlayer](lunaplayer.png)
+![LunaPlayer](lunaplayer2.png)
 
 [Github Seite](https://github.com/Angonikro/LunaPlayer/)
 
