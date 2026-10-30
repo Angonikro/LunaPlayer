@@ -31,7 +31,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         # constructor may need the title before the instance has settings.
         super().__init__(application=application, title='LunaPlayer')
         self.settings=load_settings()
-        self.set_default_size(1120,740); self._fullscreen_restore = {}; self.playlist=Playlist(); self._mp3_playlist_snapshot=None; self._cd_playlist_mode=False; self.cd_queue=None; self.cd_queue_index=0; self.cd_metadata=None; self.cd_playlist_meta={}; self.is_seeking=False; self._quitting=False
+        self.set_default_size(1120,740); self._fullscreen_restore = {}; self.playlist=Playlist(); self._mp3_playlist_snapshot=None; self._cd_playlist_mode=False; self.cd_queue=None; self.cd_queue_index=0; self.cd_metadata=None; self.cd_playlist_meta={}; self.is_seeking=False; self._quitting=False; self._ejecting_devices=set()
         try:self.engine=PlayerEngine(on_eos=self._on_eos,on_error=self._on_error); self.startup_error=''
         except Exception as exc:self.engine=None; self.startup_error=str(exc)
         self._vlc_player=None; self._video_updating_seek=False; self._video_fullscreen_active=False; self._video_surface_xid=0; self._x_display=None; self._xlib=None; self._vlc_child_xid=0; self._vlc_colormap=0; self._fullscreen_video_window=None; self._fullscreen_video_area=None; self._fullscreen_video_xid=0; self._fullscreen_controls_window=None; self._fullscreen_controls_xid=0; self._fullscreen_controls_parented=False; self._fullscreen_pointer_last=None; self._fullscreen_last_motion=0.0; self._fullscreen_blank_cursor=0; self._fullscreen_cursor_hidden=False; self._build_ui(); keys=Gtk.EventControllerKey(); keys.connect('key-pressed', self._main_key_pressed); self.add_controller(keys); self._set_theme(bool(self.settings.get('dark_mode', True))); self._update_volume_label(); GLib.timeout_add(400,self._tick); self.connect('close-request',self._on_close)
@@ -239,7 +239,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
     def _about_dialog(self, *_args):
         dialog = Gtk.AboutDialog(transient_for=self, modal=False)
         dialog.set_program_name("LunaPlayer")
-        dialog.set_version("1.6.2")
+        dialog.set_version("1.6.4")
         dialog.set_comments("Deine Musik. Dein Klang.")
         dialog.set_copyright("© Goldisoft 2026")
         dialog.set_license_type(Gtk.License.GPL_3_0)
@@ -334,7 +334,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         logo=Gtk.Label(label=self._t('☾')); logo.add_css_class('moon-logo')
         titlebox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
         name=Gtk.Label(label=self._t('LunaPlayer'),xalign=0); name.add_css_class('brand')
-        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.2',xalign=0); subtitle.add_css_class('muted')
+        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.4',xalign=0); subtitle.add_css_class('muted')
         titlebox.append(name);titlebox.append(subtitle);header.append(logo);header.append(titlebox)
         spacer=Gtk.Box();spacer.set_hexpand(True);header.append(spacer)
         language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
@@ -366,7 +366,17 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         self.video_fullscreen_button=Gtk.Button(label=self._t('Vollbild'));self.video_fullscreen_button.connect('clicked',self._video_fullscreen);video_buttons.append(self.video_fullscreen_button)
         self.video_window_button=Gtk.Button(label=self._t('Fenster'));self.video_window_button.connect('clicked',self._leave_video_fullscreen);self.video_window_button.set_visible(False);video_buttons.append(self.video_window_button)
         self.video_seek=Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,0,1000,1);self.video_seek.set_draw_value(False);self.video_seek.set_hexpand(True);self.video_seek.connect('value-changed',self._video_seek_changed)
-        self.video_controls.append(video_buttons);self.video_controls.append(self.video_seek);left.append(self.video_controls)
+        self.video_controls.append(video_buttons);self.video_controls.append(self.video_seek)
+        video_volume_row=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=8)
+        video_volume_row.set_halign(Gtk.Align.CENTER)
+        video_volume_row.append(Gtk.Label(label=self._t("🔊 Video")))
+        self.video_volume=Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,0,100,1)
+        self.video_volume.set_value(75);self.video_volume.set_draw_value(False)
+        self.video_volume.set_size_request(150,-1)
+        self.video_volume.connect("value-changed",self._video_volume_changed)
+        self.video_volume_label=Gtk.Label(label="75%")
+        video_volume_row.append(self.video_volume);video_volume_row.append(self.video_volume_label)
+        self.video_controls.append(video_volume_row);left.append(self.video_controls)
         self.track_title=Gtk.Label(label=self._t('Noch kein Titel ausgewählt'),xalign=.5);self.track_title.add_css_class('track-title');self.track_title.set_ellipsize(Pango.EllipsizeMode.END)
         self.artist_label=Gtk.Label(label=self._t('Füge Musik hinzu, um zu beginnen'),xalign=.5);self.artist_label.add_css_class('muted');left.append(self.track_title);left.append(self.artist_label)
         timeline=Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,spacing=10);self.elapsed=Gtk.Label(label=self._t('0:00'));self.total=Gtk.Label(label=self._t('0:00'))
@@ -477,6 +487,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             self._position_vlc_child()
             player = self._ensure_vlc_player()
             player.set_window(self._vlc_child_xid)
+            player.set_volume(self.video_volume.get_value())
             if disc:
                 player.play_disc(*disc)
                 self._set_status(f"{disc[0].upper()} wird im LunaPlayer-Fenster abgespielt")
@@ -624,6 +635,12 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
     def _video_seek_changed(self, scale):
         if self._vlc_player and not self._video_updating_seek:
             self._vlc_player.seek(scale.get_value() / 1000.0)
+
+    def _video_volume_changed(self, scale):
+        value = max(0, min(100, int(round(scale.get_value()))))
+        self.video_volume_label.set_text(f"{value}%")
+        if self._vlc_player:
+            self._vlc_player.set_volume(value)
 
     def _video_fullscreen(self, *_):
         """Move the native VLC X11 child into a dedicated true-fullscreen window.
@@ -909,6 +926,33 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         self.video_window_button.set_visible(active)
         return False
 
+    def _eject_drive_async(self, drive, on_complete):
+        """Eject an optical drive off the GTK main thread and report on GTK thread."""
+        drive = (drive or "/dev/sr0").strip() or "/dev/sr0"
+        if drive in self._ejecting_devices:
+            return
+        self._ejecting_devices.add(drive)
+
+        def worker():
+            error = None
+            try:
+                AudioCD(drive).eject()
+            except Exception as exc:
+                error = str(exc)
+
+            def finish():
+                self._ejecting_devices.discard(drive)
+                on_complete(error)
+                return False
+
+            GLib.idle_add(finish)
+
+        threading.Thread(
+            target=worker,
+            daemon=True,
+            name=f"LunaPlayer-Eject-{Path(drive).name or 'drive'}",
+        ).start()
+
     def _disc_dialog(self, *_):
         dialog = Gtk.Dialog(title=self._t("DVD / Blu-ray abspielen"), transient_for=self, modal=True)
         dialog.add_button(self._t("Abbrechen"), Gtk.ResponseType.CANCEL)
@@ -931,12 +975,18 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         box.append(eject_status)
         def eject_disc(*_):
             drive = device.get_text().strip() or "/dev/sr0"
-            try:
-                subprocess.run(["eject", drive], check=True, timeout=8, capture_output=True, text=True)
-                eject_status.set_text(self._t("Auswerfen angefordert."))
-            except Exception as exc:
-                detail = getattr(exc, "stderr", None) or str(exc)
-                eject_status.set_text(f'{self._t("Auswerfen fehlgeschlagen:")} {detail}'.strip())
+            eject_button.set_sensitive(False)
+            eject_status.set_text(self._t("Laufwerk wird im Hintergrund ausgeworfen …"))
+
+            def eject_finished(error):
+                if not dialog.get_visible():
+                    return
+                eject_button.set_sensitive(True)
+                if error:
+                    eject_status.set_text(f'{self._t("Auswerfen fehlgeschlagen:")} {error}'.strip())
+                else:
+                    eject_status.set_text(self._t("Auswerfen angefordert."))
+            self._eject_drive_async(drive, eject_finished)
         eject_button.connect("clicked", eject_disc)
         note = Gtk.Label(label=self._t("Blu-ray-Wiedergabe hängt von VLC, libbluray und dem Disc-Schutz ab."), xalign=0, wrap=True); note.add_css_class("dim-label"); box.append(note)
         dialog.get_content_area().append(box)
@@ -1408,10 +1458,19 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             device.set_active(0)
             info.set_text(f'{len(found)} Laufwerk(e) gefunden. Lege eine Audio-CD ein und klicke „CD erkennen“.')
         def eject(*_):
-            try:
-                AudioCD(selected_device()).eject()
-                info.set_text(self._t('Auswerfen angefordert.'))
-            except Exception as exc:info.set_text(f'Auswerfen fehlgeschlagen: {exc}')
+            dev = selected_device()
+            eject_button.set_sensitive(False)
+            info.set_text(self._t('Laufwerk wird im Hintergrund ausgeworfen …'))
+
+            def eject_finished(error):
+                if not dialog.get_visible():
+                    return
+                eject_button.set_sensitive(True)
+                if error:
+                    info.set_text(f'Auswerfen fehlgeschlagen: {error}')
+                else:
+                    info.set_text(self._t('Auswerfen angefordert.'))
+            self._eject_drive_async(dev, eject_finished)
         def choose_online_cover_cb(*_):
             candidates = cd_metadata.get('cover_candidates') or []
             if not candidates:

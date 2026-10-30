@@ -1,3 +1,12 @@
+## 1.6.4
+- CD-, DVD- und Blu-ray-Auswurf läuft jetzt in einem eigenen Hintergrund-Thread.
+- Die GTK-Oberfläche bleibt während des Auswerfens bedienbar; die jeweilige Auswurftaste wird bis zum Ergebnis deaktiviert.
+- Fehlermeldungen werden nach Abschluss sicher an die Oberfläche zurückgemeldet.
+- Wiedergabe, VLC-Steuerung, Disc-Erkennung und Vollbildlogik bleiben unverändert.
+
+## 1.6.3
+- Für eingebettete Videos, DVD- und Blu-ray-Wiedergabe wurde ein spezieller VLC-Lautstärkeregler von 0–100 % hinzugefügt. Die Musiklautstärke bleibt getrennt.
+
 ## 1.6.2
 - VLC wiedergabe in die App integriert DVD Blu-ray Video
 - In-App-Anleitung um Video-Dateien, Vollbild/Fenstermodus sowie DVD- und Blu-ray-Wiedergabe ergänzt.

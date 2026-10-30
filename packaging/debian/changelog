@@ -1,4 +1,18 @@
-lunaplayer (1.6.2) stable; urgency=medium
+lunaplayer (1.6.4) stable; urgency=medium
+
+  * Run Audio-CD, DVD and Blu-ray eject operations in background threads.
+  * Keep the GTK interface responsive and report eject results asynchronously.
+  * Leave playback, disc detection and fullscreen behavior unchanged.
+
+ -- LunaPlayer Project <noreply@example.invalid>  Fri, 30 Oct 2026 03:40:00 +0100
+
+lunaplayer (1.6.3) stable; urgency=medium
+
+  * Add dedicated VLC volume control for embedded video and optical discs.
+
+ -- LunaPlayer Project <noreply@example.invalid>  Fri, 30 Oct 2026 02:30:00 +0100
+
+lunaplayer (1.6.3) stable; urgency=medium
 
   * Add English translations for the fullscreen and window mode buttons.
   * No playback or disc-handling changes.

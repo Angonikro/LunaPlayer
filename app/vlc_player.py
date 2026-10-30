@@ -120,6 +120,11 @@ class EmbeddedVLCPlayer:
         self.player.stop()
         self._stopped = True
 
+    def set_volume(self, percent):
+        """Set VLC playback volume from 0 to 100 percent."""
+        value = max(0, min(100, int(round(float(percent)))))
+        return self.player.audio_set_volume(value)
+
     def is_playing(self):
         return bool(self.player.is_playing())
 
