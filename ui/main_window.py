@@ -69,6 +69,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         file_menu.append(self._t("Ordner auswählen…"), "win.choose-folder")
         file_menu.append(self._t("CD abspielen…"), "win.play-cd")
         file_menu.append(self._t("Videos öffnen…"), "win.open-videos")
+        file_menu.append(self._t("TV-Playlist öffnen…"), "win.open-tv-playlist")
         file_menu.append(self._t("DVD / Blu-ray abspielen…"), "win.play-disc")
         file_menu.append(self._t("Beenden"), "win.quit")
         menu.append_submenu(self._t("Datei"), file_menu)
@@ -95,6 +96,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             ("choose-folder", lambda *_: self._choose_folder()),
             ("play-cd", lambda *_: self._cd_dialog()),
             ("open-videos", lambda *_: self._choose_videos()),
+            ("open-tv-playlist", lambda *_: self._choose_tv_playlist()),
             ("play-disc", lambda *_: self._disc_dialog()),
             ("quit", lambda *_: self._quit_app()),
             ("audio-device", lambda *_: self._audio_device_dialog()),
@@ -239,7 +241,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
     def _about_dialog(self, *_args):
         dialog = Gtk.AboutDialog(transient_for=self, modal=False)
         dialog.set_program_name("LunaPlayer")
-        dialog.set_version("1.6.4")
+        dialog.set_version("1.6.5")
         dialog.set_comments("Deine Musik. Dein Klang.")
         dialog.set_copyright("© Goldisoft 2026")
         dialog.set_license_type(Gtk.License.GPL_3_0)
@@ -334,7 +336,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         logo=Gtk.Label(label=self._t('☾')); logo.add_css_class('moon-logo')
         titlebox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
         name=Gtk.Label(label=self._t('LunaPlayer'),xalign=0); name.add_css_class('brand')
-        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.4',xalign=0); subtitle.add_css_class('muted')
+        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.5',xalign=0); subtitle.add_css_class('muted')
         titlebox.append(name);titlebox.append(subtitle);header.append(logo);header.append(titlebox)
         spacer=Gtk.Box();spacer.set_hexpand(True);header.append(spacer)
         language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
@@ -428,6 +430,25 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             self._set_status(f'{added} Audiodatei(en) hinzugefügt')
             if self.playlist.current() and self.engine and not self.engine.current_path:self._play_path(self.playlist.current())
         dialog.destroy()
+    def _choose_tv_playlist(self, *_):
+        dialog = Gtk.FileChooserNative.new(self._t("TV-Playlist öffnen"), self, Gtk.FileChooserAction.OPEN, self._t("Öffnen"), self._t("Abbrechen"))
+        filt = Gtk.FileFilter(); filt.set_name("M3U TV-Playlist")
+        filt.add_pattern("*.m3u"); filt.add_pattern("*.m3u8"); filt.add_pattern("*.M3U"); filt.add_pattern("*.M3U8")
+        dialog.add_filter(filt)
+        dialog.connect("response", self._tv_playlist_chosen); dialog.show()
+
+    def _tv_playlist_chosen(self, dialog, response):
+        if response == Gtk.ResponseType.ACCEPT:
+            try:
+                path = dialog.get_file().get_path()
+                self.playlist = Playlist()
+                count = self.playlist.load_m3u(path)
+                self._refresh_playlist()
+                self._set_status(f"{count} TV-Sender aus Playlist geladen")
+            except Exception as exc:
+                self._set_status(f"TV-Playlist konnte nicht geladen werden: {exc}")
+        dialog.destroy()
+
     def _choose_videos(self, *_):
         dialog = Gtk.FileChooserNative.new(self._t("Videodateien öffnen"), self, Gtk.FileChooserAction.OPEN, self._t("Abspielen"), self._t("Abbrechen"))
         dialog.set_select_multiple(True)
@@ -1104,6 +1125,11 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
                 self.engine.play_cd_track(dev, number)
                 self._show_metadata(path)
                 self.play_button.set_label('Ⅱ'); self.seek.set_sensitive(False); self._set_status(f'Audio-CD · Track {number}')
+            elif str(path).lower().startswith(('http://','https://','rtsp://','udp://')):
+                self._start_embedded_video(paths=[path])
+                self.play_button.set_label('Ⅱ'); self.seek.set_sensitive(False)
+                self.track_title.set_text(path); self.artist_label.set_text(self._t('TV-Stream'))
+                self._set_status(self._t('TV-Wiedergabe'))
             else:
                 self.engine.load(path);self.engine.play();self.play_button.set_label('Ⅱ');self.seek.set_sensitive(True);self._show_metadata(path);self._set_status(self._t('Wiedergabe'))
             self._refresh_playlist()

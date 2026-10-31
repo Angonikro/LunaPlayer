@@ -1,4 +1,7 @@
-## 1.6.4
+## 1.6.5
+- IPTV/TV-M3U-Playlists können über Datei → TV-Playlist öffnen geladen und mit VLC direkt im LunaPlayer abgespielt werden.
+
+## 1.6.5
 - CD-, DVD- und Blu-ray-Auswurf läuft jetzt in einem eigenen Hintergrund-Thread.
 - Die GTK-Oberfläche bleibt während des Auswerfens bedienbar; die jeweilige Auswurftaste wird bis zum Ergebnis deaktiviert.
 - Fehlermeldungen werden nach Abschluss sicher an die Oberfläche zurückgemeldet.

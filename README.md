@@ -1,4 +1,4 @@
-# LunaPlayer 1.6.4
+# LunaPlayer 1.6.5
 
 **Ein Musikplayer und Videoplayer für Linux · Goldisoft 2026**
 
@@ -24,6 +24,9 @@ LunaPlayer ist ein Desktop-Musikplayer und Video-Player für Linux und Raspberry
 - Audiogerät und Erscheinungsbild konfigurieren
 - System-Tray verwenden, sofern die Desktop-Umgebung Statussymbole unterstützt
 - Sprachwahl Deutsch/Englisch über **Einstellungen → Sprache / Language**; zusätzlich ist die Auswahl in der Kopfzeile verfügbar
+
+## TV / IPTV (M3U)
+LunaPlayer kann M3U- und M3U8-TV-Playlists laden. Wähle **Datei → TV-Playlist öffnen…**. Die Sender erscheinen in der Wiedergabeliste und werden mit dem integrierten VLC-Player mit Bild und Ton wiedergegeben.
 
 ## Video, DVD und Blu-ray
 
@@ -57,12 +60,12 @@ Die konkret benötigten Pakete können je nach Distribution und installierter Ve
 
 ## Installation auf Debian / Raspberry Pi OS
 
-1. Laden Sie `lunaplayer_1.6.4_all.deb` herunter.
+1. Laden Sie `lunaplayer_1.6.5_all.deb` herunter.
 2. Öffnen Sie ein Terminal im Download-Ordner.
 3. Installieren Sie das Paket:
 
    ```bash
-   sudo apt install ./lunaplayer_1.6.4_all.deb
+   sudo apt install ./lunaplayer_1.6.5_all.deb
    ```
 
 4. Starten Sie LunaPlayer über das Anwendungsmenü. Falls der Startbefehl verfügbar ist, können Sie auch `lunaplayer` im Terminal verwenden.
@@ -86,7 +89,7 @@ Diese Schritte sind für Debian 13 / Raspberry Pi OS auf einem Desktop-System ge
 
    ```bash
    cd ~/Downloads
-   unzip LunaPlayer_1.6.4_GITHUB.zip
+   unzip LunaPlayer_1.6.5_GITHUB.zip
    cd LunaPlayer
    ```
 
@@ -147,4 +150,3 @@ Die Lizenzbedingungen stehen in der Datei `LICENSE`, sofern sie in diesem Reposi
 \n\n### Sprache sofort umstellen\n\nDie Auswahl unter **Einstellungen → Sprache / Language** speichert Deutsch oder English und baut das Fenster direkt neu auf. Ein manueller Neustart sollte dafür nicht nötig sein.\n
 
 73 de DO2QG Andreas
-

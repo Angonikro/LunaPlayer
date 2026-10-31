@@ -42,7 +42,7 @@ class EmbeddedVLCPlayer:
                 self.play_disc(*value)
 
     def play_paths(self, paths):
-        self.paths = [str(Path(p).expanduser().resolve()) for p in paths]
+        self.paths = [str(p) if str(p).lower().startswith(("http://", "https://", "rtsp://", "udp://")) else str(Path(p).expanduser().resolve()) for p in paths]
         self.index = 0
         self._disc_source = None
         self._stopped = False
@@ -75,7 +75,8 @@ class EmbeddedVLCPlayer:
             raise RuntimeError("VLC konnte die Disc nicht starten.")
 
     def _play_current(self):
-        media = self.instance.media_new_path(self.paths[self.index])
+        source = self.paths[self.index]
+        media = self.instance.media_new(source) if source.lower().startswith(("http://", "https://", "rtsp://", "udp://")) else self.instance.media_new_path(source)
         self.player.set_media(media)
         if self._xid:
             self.player.set_xwindow(self._xid)

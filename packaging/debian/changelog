@@ -1,4 +1,4 @@
-lunaplayer (1.6.4) stable; urgency=medium
+lunaplayer (1.6.5) stable; urgency=medium
 
   * Run Audio-CD, DVD and Blu-ray eject operations in background threads.
   * Keep the GTK interface responsive and report eject results asynchronously.

@@ -32,5 +32,16 @@ class Playlist:
         for line in path.read_text(encoding='utf-8-sig',errors='replace').splitlines():
             line=line.strip()
             if not line or line.startswith('#'): continue
-            p=Path(line); items.append(str((path.parent/p).resolve() if not p.is_absolute() else p))
-        return self.add_paths(items)
+            
+            if line.lower().startswith(('http://','https://','rtsp://','udp://')):
+                items.append(line)
+            else:
+                p=Path(line); items.append(str((path.parent/p).resolve() if not p.is_absolute() else p))
+        before=len(self.items)
+        for item in items:
+            if item.lower().startswith(('http://','https://','rtsp://','udp://')):
+                if item not in self.items: self.items.append(item)
+            elif is_supported_audio(item) and Path(item).is_file() and item not in self.items:
+                self.items.append(item)
+        if self.index < 0 and self.items: self.index=0
+        return len(self.items)-before
