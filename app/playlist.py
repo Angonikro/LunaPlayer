@@ -2,7 +2,8 @@
 from pathlib import Path
 from app.formats import is_supported_audio
 class Playlist:
-    def __init__(self): self.items=[]; self.index=-1
+    def __init__(self):
+        self.items=[]; self.index=-1; self.display_names={}
     def add_paths(self, paths):
         before=len(self.items)
         for path in paths:
@@ -21,6 +22,7 @@ class Playlist:
         return None
     def remove(self,index):
         if 0 <= index < len(self.items):
+            removed=self.items[index]; self.display_names.pop(removed, None)
             del self.items[index]
             if not self.items: self.index=-1
             elif self.index >= len(self.items): self.index=len(self.items)-1
@@ -28,20 +30,37 @@ class Playlist:
     def save_m3u(self, filename):
         Path(filename).write_text('#EXTM3U\n'+'\n'.join(self.items)+'\n',encoding='utf-8')
     def load_m3u(self, filename):
-        path=Path(filename); items=[]
-        for line in path.read_text(encoding='utf-8-sig',errors='replace').splitlines():
-            line=line.strip()
-            if not line or line.startswith('#'): continue
-            
+        """Load ordinary audio M3U files and IPTV-style M3U files.
+
+        #EXTINF entries are associated with the next media URL/path.  The media
+        item itself remains the playlist value, so existing MP3 playback and
+        all callers using ``items`` continue to work unchanged.
+        """
+        path=Path(filename); entries=[]; pending_name=None
+        for raw_line in path.read_text(encoding='utf-8-sig',errors='replace').splitlines():
+            line=raw_line.strip()
+            if not line: continue
+            if line.upper().startswith('#EXTINF:'):
+                # The display name is the text after the final comma. This also
+                # works with IPTV attributes such as tvg-name and group-title.
+                pending_name=line.rsplit(',', 1)[-1].strip() if ',' in line else None
+                continue
+            if line.startswith('#'): continue
             if line.lower().startswith(('http://','https://','rtsp://','udp://')):
-                items.append(line)
+                item=line
             else:
-                p=Path(line); items.append(str((path.parent/p).resolve() if not p.is_absolute() else p))
+                media_path=Path(line)
+                item=str((path.parent/media_path).resolve() if not media_path.is_absolute() else media_path)
+            entries.append((item, pending_name))
+            pending_name=None
         before=len(self.items)
-        for item in items:
+        for item, display_name in entries:
             if item.lower().startswith(('http://','https://','rtsp://','udp://')):
-                if item not in self.items: self.items.append(item)
+                if item not in self.items:
+                    self.items.append(item)
+                    if display_name: self.display_names[item]=display_name
             elif is_supported_audio(item) and Path(item).is_file() and item not in self.items:
                 self.items.append(item)
+                if display_name: self.display_names[item]=display_name
         if self.index < 0 and self.items: self.index=0
         return len(self.items)-before

@@ -16,4 +16,13 @@ class PlaylistTests(unittest.TestCase):
             a=Path(d)/'song.ogg';a.touch(); pl=Playlist();pl.add_paths([str(a)])
             m3u=Path(d)/'list.m3u';pl.save_m3u(m3u)
             pl2=Playlist();pl2.load_m3u(m3u);self.assertEqual(pl2.items,[str(a.resolve())])
+    def test_iptv_extinf_names(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            m3u=Path(d)/'tv.m3u'
+            m3u.write_text('#EXTM3U\n#EXTINF:-1 tvg-name="Das Erste HD",Das Erste HD\nhttps://example.test/master.m3u8\n#EXTINF:-1,ZDF HD\nhttps://example.test/index.m3u8\n', encoding='utf-8')
+            pl=Playlist(); pl.load_m3u(m3u)
+            self.assertEqual(pl.display_names[pl.items[0]], 'Das Erste HD')
+            self.assertEqual(pl.display_names[pl.items[1]], 'ZDF HD')
+
 if __name__=='__main__':unittest.main()

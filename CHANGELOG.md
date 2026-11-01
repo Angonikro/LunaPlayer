@@ -1,3 +1,6 @@
+## 1.6.6
+- TV-M3U: Sendernamen aus #EXTINF werden angezeigt; normale Audio-M3U-Dateien bleiben kompatibel.
+
 ## 1.6.5
 - IPTV/TV-M3U-Playlists können über Datei → TV-Playlist öffnen geladen und mit VLC direkt im LunaPlayer abgespielt werden.
 

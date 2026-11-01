@@ -241,7 +241,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
     def _about_dialog(self, *_args):
         dialog = Gtk.AboutDialog(transient_for=self, modal=False)
         dialog.set_program_name("LunaPlayer")
-        dialog.set_version("1.6.5")
+        dialog.set_version("1.6.6")
         dialog.set_comments("Deine Musik. Dein Klang.")
         dialog.set_copyright("© Goldisoft 2026")
         dialog.set_license_type(Gtk.License.GPL_3_0)
@@ -336,7 +336,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         logo=Gtk.Label(label=self._t('☾')); logo.add_css_class('moon-logo')
         titlebox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
         name=Gtk.Label(label=self._t('LunaPlayer'),xalign=0); name.add_css_class('brand')
-        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.5',xalign=0); subtitle.add_css_class('muted')
+        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.6',xalign=0); subtitle.add_css_class('muted')
         titlebox.append(name);titlebox.append(subtitle);header.append(logo);header.append(titlebox)
         spacer=Gtk.Box();spacer.set_hexpand(True);header.append(spacer)
         language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
@@ -1069,7 +1069,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
                 title=(titles[number-1] if number <= len(titles) and titles[number-1] else f'Audio-CD · Track {number:02d}')
                 artist=' — '.join(x for x in (cdmeta.get('artist',''),cdmeta.get('album','')) if x) or 'Audio-CD'
             else:
-                meta=read_metadata(path);title=meta.get('title') or Path(path).stem;artist=meta.get('artist') or Path(path).suffix[1:].upper()
+                meta=read_metadata(path);title=meta.get('title') or self.playlist.display_names.get(path) or Path(path).stem;artist=meta.get('artist') or (self._t('TV-Sender') if path.lower().startswith(('http://','https://','rtsp://','udp://')) else Path(path).suffix[1:].upper())
             if query and query not in (title+' '+artist+' '+path).casefold():continue
             rb=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=3);rb.set_margin_top(9);rb.set_margin_bottom(9);rb.set_margin_start(12);rb.set_margin_end(12)
             t=Gtk.Label(label=title,xalign=0);t.add_css_class('row-title');t.set_ellipsize(Pango.EllipsizeMode.END);a=Gtk.Label(label=artist,xalign=0);a.add_css_class('muted');a.set_ellipsize(Pango.EllipsizeMode.END);rb.append(t);rb.append(a)
