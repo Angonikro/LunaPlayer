@@ -2,12 +2,12 @@
 """LunaPlayer host: Tkinter owns the lifecycle and GTK 3 tray, like LunaKalender.
 The GTK 4 player UI runs as a child process so GTK 3 and GTK 4 never share a process.
 """
-import os, sys, socket, socketserver, threading, subprocess, signal, time
+import os, sys, socket, socketserver, threading, subprocess, signal, time, json
 from pathlib import Path
 import tkinter as tk
 from app.settings import load_settings
 
-VERSION = "1.6.4"
+VERSION = "1.6.7"
 SOCKET_PATH = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / f"lunaplayer-controller-{os.getuid()}.sock"
 
 class TrayHost:
@@ -92,6 +92,9 @@ class ControllerServer:
         self.root, self.tray = root, tray
         self.connection = None
         self.send_lock = threading.Lock()
+        self.connection_ready = threading.Event()
+        self.pending_open = []
+        self.pending_lock = threading.Lock()
         self.server = None
         self.thread = None
 
@@ -101,15 +104,36 @@ class ControllerServer:
         owner = self
         class Handler(socketserver.StreamRequestHandler):
             def handle(self):
-                owner.connection = self.request
+                is_child = False
                 try:
+                    first = self.rfile.readline()
+                    if not first:
+                        return
+                    command = first.decode("utf-8", "replace").strip()
+                    if command == "CHILD_HELLO":
+                        is_child = True
+                        owner.connection = self.request
+                        owner.connection_ready.set()
+                        with owner.pending_lock:
+                            queued = list(owner.pending_open)
+                            owner.pending_open.clear()
+                        for pending in queued:
+                            owner._send_to_connection(pending)
+                    else:
+                        owner.handle_external_command(command)
                     for raw in self.rfile:
                         command = raw.decode("utf-8", "replace").strip()
-                        owner.root.after(0, lambda c=command: owner.handle_command(c))
+                        if is_child:
+                            owner.root.after(0, lambda c=command: owner.handle_command(c))
+                        else:
+                            owner.handle_external_command(command)
                 except (OSError, RuntimeError):
                     pass
                 finally:
-                    if owner.connection is self.request: owner.connection = None
+                    if is_child and owner.connection is self.request:
+                        owner.connection = None
+                        owner.connection_ready.clear()
+
         class Server(socketserver.ThreadingUnixStreamServer):
             daemon_threads = True
             allow_reuse_address = True
@@ -118,6 +142,17 @@ class ControllerServer:
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True, name="LunaPlayer-IPC")
         self.thread.start()
 
+    def handle_external_command(self, command):
+        if command.startswith("OPEN\t"):
+            if self.connection is not None:
+                self.root.after(0, lambda c=command: self._send_to_connection(c))
+            else:
+                with self.pending_lock:
+                    self.pending_open.append(command)
+
+    def wait_for_child(self, timeout=8):
+        return self.connection_ready.wait(timeout)
+
     def handle_command(self, command):
         if command == "TRAY_ON":
             if not self.tray.start(): self.tray.send_to_child("TRAY_FAILED")
@@ -125,6 +160,9 @@ class ControllerServer:
             self.tray.stop()
         elif command == "CHILD_QUIT":
             self.root.after(150, self.root.quit)
+        elif command.startswith("OPEN\t"):
+            # Preserve the JSON payload intact; the GTK child owns the playlist.
+            self._send_to_connection(command)
 
     def _send_to_connection(self, command):
         if self.connection:
@@ -142,7 +180,26 @@ class ControllerServer:
         except OSError: pass
 
 
+def _forward_files_to_running_instance(paths):
+    """Send files to an already running LunaPlayer without replacing its IPC socket."""
+    if not paths:
+        return False
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+            sock.settimeout(1.0)
+            sock.connect(str(SOCKET_PATH))
+            payload = json.dumps([str(Path(x).expanduser().resolve()) for x in paths], ensure_ascii=False)
+            sock.sendall(("OPEN\t" + payload + "\n").encode("utf-8"))
+        return True
+    except OSError:
+        return False
+
+
 def main():
+    # A second launch must forward its files to the existing player. In
+    # particular, it must not unlink/recreate the active controller socket.
+    if _forward_files_to_running_instance(sys.argv[1:]):
+        return
     root = tk.Tk()
     root.withdraw()
     try:
@@ -166,7 +223,10 @@ def main():
     # libVLC embeds video through X11; under Wayland use XWayland when available.
     if env.get("DISPLAY"):
         env["GDK_BACKEND"] = "x11"
-    child = subprocess.Popen([sys.executable, str(child_path), *sys.argv[1:]], env=env)
+    child = subprocess.Popen([sys.executable, str(child_path)], env=env)
+    if sys.argv[1:] and controller.wait_for_child(10):
+        payload = json.dumps([str(Path(x).expanduser().resolve()) for x in sys.argv[1:]], ensure_ascii=False)
+        controller._send_to_connection("OPEN\t" + payload)
     def poll_child():
         if child.poll() is not None:
             root.quit(); return

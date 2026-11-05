@@ -1,3 +1,13 @@
+lunaplayer (1.6.7) stable; urgency=medium
+
+  * Externe Audio- und Videodateien aus Dateimanagern öffnen.
+  * Mehrere ausgewählte Dateien gemeinsam übergeben.
+  * Neue Dateiöffnungen an die laufende Instanz weiterleiten.
+  * IPC-Verbindung durch eindeutige Anmeldung stabilisieren.
+  * Dokumentation auf Version 1.6.7 aktualisieren.
+
+ -- LunaPlayer Projekt  Thu, 05 Nov 2026 19:00:00 +0100
+
 lunaplayer (1.6.6) stable; urgency=medium
 
   * Run Audio-CD, DVD and Blu-ray eject operations in background threads.

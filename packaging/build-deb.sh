@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-VERSION=1.6.6
+VERSION=1.6.7
 STAGE="$ROOT/build/deb"
 rm -rf "$STAGE"
 mkdir -p "$STAGE/DEBIAN" "$STAGE/usr/share/lunaplayer" "$STAGE/usr/bin" "$STAGE/usr/share/applications" "$STAGE/usr/share/icons/hicolor/scalable/apps" "$STAGE/usr/share/pixmaps" "$STAGE/usr/share/doc/lunaplayer" "$STAGE/usr/share/lunaplayer/scripts"
@@ -16,7 +16,7 @@ done
 sed -i "s/^Version: .*/Version: $VERSION/" "$STAGE/DEBIAN/control"
 cp "$ROOT/packaging/debian/changelog" "$STAGE/DEBIAN/changelog"
 cp "$ROOT/packaging/debian/copyright" "$STAGE/usr/share/doc/lunaplayer/copyright"
-for doc in README.md CHANGELOG.md RELEASE_NOTES_1.6.6.md RELEASE_NOTES_1.6.5.md RELEASE_NOTES_1.6.3.md RELEASE_NOTES_1.6.2.md RELEASE_NOTES_1.6.1.md LunaPlayer-1.3.1-Handbuch-DE-EN.pdf; do
+for doc in README.md CHANGELOG.md RELEASE_NOTES_1.6.7.md RELEASE_NOTES_1.6.5.md RELEASE_NOTES_1.6.3.md RELEASE_NOTES_1.6.2.md RELEASE_NOTES_1.6.1.md LunaPlayer-1.3.1-Handbuch-DE-EN.pdf; do
     if [ -f "$ROOT/$doc" ]; then cp "$ROOT/$doc" "$STAGE/usr/share/doc/lunaplayer/"; fi
 done
 cp "$ROOT/main.py" "$STAGE/usr/share/lunaplayer/main.py"
@@ -34,7 +34,7 @@ chmod 755 "$STAGE/usr/share/lunaplayer/scripts/create_desktop_entry.sh"
 find "$STAGE/usr/share/lunaplayer" -type d -name __pycache__ -prune -exec rm -rf {} +
 cp "$ROOT/data/icons/lunaplayer.svg" "$STAGE/usr/share/icons/hicolor/scalable/apps/lunaplayer.svg"
 cp "$ROOT/data/icons/lunaplayer-256.png" "$STAGE/usr/share/pixmaps/lunaplayer.png"
-sed 's|^Exec=.*|Exec=/usr/bin/lunaplayer|; s|^Icon=.*|Icon=/usr/share/pixmaps/lunaplayer.png|' "$ROOT/data/desktop/lunaplayer.desktop" > "$STAGE/usr/share/applications/lunaplayer.desktop"
+sed 's|^Exec=.*|Exec=/usr/bin/lunaplayer %F|; s|^Icon=.*|Icon=/usr/share/pixmaps/lunaplayer.png|' "$ROOT/data/desktop/lunaplayer.desktop" > "$STAGE/usr/share/applications/lunaplayer.desktop"
 cat > "$STAGE/usr/bin/lunaplayer" <<'WRAPPER'
 #!/bin/sh
 exec /usr/bin/python3 /usr/share/lunaplayer/main.py "$@"

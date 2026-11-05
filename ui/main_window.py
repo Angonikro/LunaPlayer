@@ -241,7 +241,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
     def _about_dialog(self, *_args):
         dialog = Gtk.AboutDialog(transient_for=self, modal=False)
         dialog.set_program_name("LunaPlayer")
-        dialog.set_version("1.6.6")
+        dialog.set_version("1.6.7")
         dialog.set_comments("Deine Musik. Dein Klang.")
         dialog.set_copyright("© Goldisoft 2026")
         dialog.set_license_type(Gtk.License.GPL_3_0)
@@ -336,7 +336,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         logo=Gtk.Label(label=self._t('☾')); logo.add_css_class('moon-logo')
         titlebox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
         name=Gtk.Label(label=self._t('LunaPlayer'),xalign=0); name.add_css_class('brand')
-        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.6',xalign=0); subtitle.add_css_class('muted')
+        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.7',xalign=0); subtitle.add_css_class('muted')
         titlebox.append(name);titlebox.append(subtitle);header.append(logo);header.append(titlebox)
         spacer=Gtk.Box();spacer.set_hexpand(True);header.append(spacer)
         language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
@@ -1053,6 +1053,42 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
             if self.playlist.current() and self.engine:
                 self._play_path(self.playlist.current())
         dialog.destroy()
+    def open_external_files(self, paths):
+        """Open one or more media files supplied by a file manager or another app."""
+        clean = []
+        for item in paths or []:
+            try:
+                value = str(item)
+                if value.startswith("file://"):
+                    value = Gio.File.new_for_uri(value).get_path() or value
+                if value and Path(value).is_file():
+                    clean.append(str(Path(value).resolve()))
+            except (OSError, TypeError, ValueError):
+                continue
+        if not clean:
+            self.present()
+            return GLib.SOURCE_REMOVE
+        if self.engine is None:
+            self.present()
+            return GLib.SOURCE_REMOVE
+        video_paths = [p for p in clean if Path(p).suffix.lower() in VIDEO_EXTENSIONS]
+        audio_paths = [p for p in clean if Path(p).suffix.lower() not in VIDEO_EXTENSIONS]
+        self.present()
+        # Video files are routed to the existing embedded VLC/X11 player.
+        # Audio files continue to use the GStreamer playlist.
+        if video_paths:
+            self._start_embedded_video(paths=video_paths)
+            if audio_paths:
+                self._set_status(self._t("Video geöffnet; zusätzlich übergebene Audiodateien wurden nicht zur Videowiedergabe hinzugefügt."))
+            return GLib.SOURCE_REMOVE
+        self.playlist = Playlist()
+        self.playlist.add_paths(audio_paths)
+        self._refresh_playlist()
+        current = self.playlist.current()
+        if current:
+            self._play_path(current)
+        return GLib.SOURCE_REMOVE
+
     def _refresh_playlist(self):
         child=self.listbox.get_first_child()
         while child:

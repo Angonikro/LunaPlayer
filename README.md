@@ -1,4 +1,4 @@
-# LunaPlayer 1.6.6
+# LunaPlayer 1.6.7
 
 **Ein Musikplayer und Videoplayer für Linux · Goldisoft 2026**
 
@@ -24,6 +24,14 @@ LunaPlayer ist ein Desktop-Musikplayer und Video-Player für Linux und Raspberry
 - Audiogerät und Erscheinungsbild konfigurieren
 - System-Tray verwenden, sofern die Desktop-Umgebung Statussymbole unterstützt
 - Sprachwahl Deutsch/Englisch über **Einstellungen → Sprache / Language**; zusätzlich ist die Auswahl in der Kopfzeile verfügbar
+
+## Dateien aus anderen Programmen öffnen
+
+- Audio- und Videodateien können über den Dateimanager oder andere Anwendungen an LunaPlayer übergeben werden.
+- Einzelne Dateien werden direkt geöffnet. Mehrere ausgewählte Dateien werden gemeinsam übergeben.
+- Audiodateien werden mit dem Audio-Player wiedergegeben; Videodateien werden an den integrierten VLC-Player übergeben.
+- Wird LunaPlayer bereits ausgeführt, werden neu geöffnete Dateien an die laufende Instanz weitergereicht.
+- Für eigene Skripte kann der Befehl `lunaplayer "/pfad/zur/datei.mp4"` verwendet werden. Mehrere Dateien können als weitere Argumente folgen.
 
 ## TV / IPTV (M3U)
 LunaPlayer kann M3U- und M3U8-TV-Playlists laden. Wähle **Datei → TV-Playlist öffnen…**. Die Sender erscheinen in der Wiedergabeliste und werden mit dem integrierten VLC-Player mit Bild und Ton wiedergegeben.
@@ -60,12 +68,12 @@ Die konkret benötigten Pakete können je nach Distribution und installierter Ve
 
 ## Installation auf Debian / Raspberry Pi OS
 
-1. Laden Sie `lunaplayer_1.6.6_all.deb` herunter.
+1. Laden Sie `lunaplayer_1.6.7_all.deb` herunter.
 2. Öffnen Sie ein Terminal im Download-Ordner.
 3. Installieren Sie das Paket:
 
    ```bash
-   sudo apt install ./lunaplayer_1.6.6_all.deb
+   sudo apt install ./lunaplayer_1.6.7_all.deb
    ```
 
 4. Starten Sie LunaPlayer über das Anwendungsmenü. Falls der Startbefehl verfügbar ist, können Sie auch `lunaplayer` im Terminal verwenden.
@@ -89,7 +97,7 @@ Diese Schritte sind für Debian 13 / Raspberry Pi OS auf einem Desktop-System ge
 
    ```bash
    cd ~/Downloads
-   unzip LunaPlayer_1.6.6_GITHUB.zip
+   unzip LunaPlayer_1.6.7_GITHUB.zip
    cd LunaPlayer
    ```
 

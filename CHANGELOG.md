@@ -1,3 +1,13 @@
+# Changelog
+
+## 1.6.7
+- Externe Audio- und Videodateien können über Dateimanager und andere Anwendungen geöffnet werden.
+- Videodateien werden an den integrierten VLC-Player übergeben; Audiodateien laufen weiterhin über den Audio-Player.
+- Mehrere ausgewählte Dateien werden gemeinsam an LunaPlayer übergeben.
+- Weitere Dateiöffnungen werden an die bereits laufende Instanz weitergeleitet.
+- Die IPC-Verbindung erkennt die Player-Instanz jetzt ausdrücklich per Handshake. Dadurch wird verhindert, dass ein schneller zweiter Start irrtümlich als Player-Verbindung behandelt wird.
+- Der Desktop-Eintrag unterstützt die Übergabe mehrerer Dateien über `%F`.
+
 ## 1.6.6
 - TV-M3U: Sendernamen aus #EXTINF werden angezeigt; normale Audio-M3U-Dateien bleiben kompatibel.
 

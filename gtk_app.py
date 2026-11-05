@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """LunaPlayer entry point."""
 import sys
+import json
 from app.gtk_compat import require_gtk
 require_gtk()
 import gi
@@ -31,6 +32,19 @@ class LunaPlayerApp(Gtk.Application):
         elif command == "TRAY_READY":
             if self.main_window is not None:
                 self.main_window._tray_ready()
+        elif command.startswith("OPEN\t"):
+            try:
+                paths = json.loads(command.split("\t", 1)[1])
+                if self.main_window is not None:
+                    self.main_window.open_external_files(paths)
+            except Exception:
+                import traceback
+                from pathlib import Path
+                log_dir = Path.home() / ".cache" / "lunaplayer"
+                log_dir.mkdir(parents=True, exist_ok=True)
+                with (log_dir / "startup.log").open("a", encoding="utf-8") as log:
+                    log.write("\n--- Externe Dateien konnten nicht geöffnet werden ---\n")
+                    traceback.print_exc(file=log)
         return GLib.SOURCE_REMOVE
 
     def do_activate(self):
@@ -40,6 +54,9 @@ class LunaPlayerApp(Gtk.Application):
             if self.main_window is None:
                 self.main_window = LunaPlayerWindow(application=self)
             self.main_window.present()
+            startup_paths = [x for x in sys.argv[1:] if x and not x.startswith("--")]
+            if startup_paths:
+                GLib.idle_add(self.main_window.open_external_files, startup_paths)
         except Exception:
             import traceback
             from pathlib import Path

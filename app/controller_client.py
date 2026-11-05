@@ -22,6 +22,11 @@ class ControllerClient:
                 self.sock = None; time.sleep(.1)
         if not self.sock:
             return False
+        try:
+            self.sock.sendall(b"CHILD_HELLO\n")
+        except OSError:
+            self.close()
+            return False
         self.thread = threading.Thread(target=self._read, daemon=True, name="LunaPlayer-Controller-Client")
         self.thread.start(); return True
     def _read(self):
