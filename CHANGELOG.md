@@ -1,4 +1,7 @@
-# Changelog
+## Changelog
+
+## 1.6.8
+- Debian-Desktop/MIME-Registrierung für Audio- und Videodateien. Wählbar als System-Standardplayer, ohne bestehende Standardeinstellungen zu überschreiben.
 
 ## 1.6.7
 - Externe Audio- und Videodateien können über Dateimanager und andere Anwendungen geöffnet werden.

@@ -1,3 +1,11 @@
+lunaplayer (1.6.8) stable; urgency=medium
+
+  * Register LunaPlayer as a desktop handler for common audio and video MIME types.
+  * Add desktop-file-utils dependency and refresh the desktop MIME application database.
+  * Keep existing user default applications unchanged; LunaPlayer can be selected as default.
+
+ -- LunaPlayer Project  Thu, 05 Nov 2026 15:20:00 +0100
+
 lunaplayer (1.6.7) stable; urgency=medium
 
   * Externe Audio- und Videodateien aus Dateimanagern öffnen.
