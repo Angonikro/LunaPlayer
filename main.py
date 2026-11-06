@@ -7,7 +7,7 @@ from pathlib import Path
 import tkinter as tk
 from app.settings import load_settings
 
-VERSION = "1.6.8"
+VERSION = "1.6.9"
 SOCKET_PATH = Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / f"lunaplayer-controller-{os.getuid()}.sock"
 
 class TrayHost:

@@ -1,4 +1,4 @@
-# LunaPlayer 1.6.8
+# LunaPlayer 1.6.9
 
 **Ein Musikplayer und Videoplayer für Linux · Goldisoft 2026**
 
@@ -68,12 +68,12 @@ Die konkret benötigten Pakete können je nach Distribution und installierter Ve
 
 ## Installation auf Debian / Raspberry Pi OS
 
-1. Laden Sie `lunaplayer_1.6.8_all.deb` herunter.
+1. Laden Sie `lunaplayer_1.6.9_all.deb` herunter.
 2. Öffnen Sie ein Terminal im Download-Ordner.
 3. Installieren Sie das Paket:
 
    ```bash
-   sudo apt install ./lunaplayer_1.6.8_all.deb
+   sudo apt install ./lunaplayer_1.6.9_all.deb
    ```
 
 4. Starten Sie LunaPlayer über das Anwendungsmenü. Falls der Startbefehl verfügbar ist, können Sie auch `lunaplayer` im Terminal verwenden.
@@ -97,7 +97,7 @@ Diese Schritte sind für Debian 13 / Raspberry Pi OS auf einem Desktop-System ge
 
    ```bash
    cd ~/Downloads
-   unzip LunaPlayer_1.6.8_GITHUB.zip
+   unzip LunaPlayer_1.6.9_GITHUB.zip
    cd LunaPlayer
    ```
 

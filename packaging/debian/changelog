@@ -1,4 +1,4 @@
-lunaplayer (1.6.8) stable; urgency=medium
+lunaplayer (1.6.9) stable; urgency=medium
 
   * Register LunaPlayer as a desktop handler for common audio and video MIME types.
   * Add desktop-file-utils dependency and refresh the desktop MIME application database.

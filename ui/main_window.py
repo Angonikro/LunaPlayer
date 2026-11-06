@@ -241,7 +241,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
     def _about_dialog(self, *_args):
         dialog = Gtk.AboutDialog(transient_for=self, modal=False)
         dialog.set_program_name("LunaPlayer")
-        dialog.set_version("1.6.8")
+        dialog.set_version("1.6.9")
         dialog.set_comments("Deine Musik. Dein Klang.")
         dialog.set_copyright("© Goldisoft 2026")
         dialog.set_license_type(Gtk.License.GPL_3_0)
@@ -336,7 +336,7 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         logo=Gtk.Label(label=self._t('☾')); logo.add_css_class('moon-logo')
         titlebox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=0)
         name=Gtk.Label(label=self._t('LunaPlayer'),xalign=0); name.add_css_class('brand')
-        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.8',xalign=0); subtitle.add_css_class('muted')
+        subtitle=Gtk.Label(label=self._t('Deine Musik. Dein Klang.') + ' · Version 1.6.9',xalign=0); subtitle.add_css_class('muted')
         titlebox.append(name);titlebox.append(subtitle);header.append(logo);header.append(titlebox)
         spacer=Gtk.Box();spacer.set_hexpand(True);header.append(spacer)
         language_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
@@ -1071,9 +1071,31 @@ class LunaPlayerWindow(Gtk.ApplicationWindow):
         if self.engine is None:
             self.present()
             return GLib.SOURCE_REMOVE
+        playlist_paths = [p for p in clean if Path(p).suffix.lower() in {".m3u", ".m3u8"}]
         video_paths = [p for p in clean if Path(p).suffix.lower() in VIDEO_EXTENSIONS]
-        audio_paths = [p for p in clean if Path(p).suffix.lower() not in VIDEO_EXTENSIONS]
+        audio_paths = [p for p in clean if Path(p).suffix.lower() not in VIDEO_EXTENSIONS
+                       and Path(p).suffix.lower() not in {".m3u", ".m3u8"}]
         self.present()
+
+        # A playlist opened from a file manager is not an audio file itself.
+        # Parse it first so local audio entries use GStreamer and stream URLs
+        # (including IPTV/HLS entries) follow the existing VLC stream path.
+        if playlist_paths:
+            self.engine.stop()
+            self.playlist = Playlist()
+            loaded = 0
+            for playlist_path in playlist_paths:
+                loaded += self.playlist.load_m3u(playlist_path)
+            if audio_paths:
+                self.playlist.add_paths(audio_paths)
+            self._refresh_playlist()
+            current = self.playlist.current()
+            if current:
+                self._play_path(current)
+            else:
+                self._set_status(self._t("Die Playlist enthält keine unterstützten oder erreichbaren Einträge."))
+            return GLib.SOURCE_REMOVE
+
         # Video files are routed to the existing embedded VLC/X11 player.
         # Audio files continue to use the GStreamer playlist.
         if video_paths:

@@ -25,4 +25,14 @@ class PlaylistTests(unittest.TestCase):
             self.assertEqual(pl.display_names[pl.items[0]], 'Das Erste HD')
             self.assertEqual(pl.display_names[pl.items[1]], 'ZDF HD')
 
+    def test_m3u8_relative_audio_entry(self):
+        with tempfile.TemporaryDirectory() as d:
+            song = Path(d) / 'track.mp3'
+            song.touch()
+            playlist_file = Path(d) / 'list.m3u8'
+            playlist_file.write_text('#EXTM3U\ntrack.mp3\n', encoding='utf-8')
+            playlist = Playlist()
+            self.assertEqual(playlist.load_m3u(str(playlist_file)), 1)
+            self.assertEqual(playlist.current(), str(song.resolve()))
+
 if __name__=='__main__':unittest.main()

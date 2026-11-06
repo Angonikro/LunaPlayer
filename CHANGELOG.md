@@ -1,5 +1,9 @@
 ## Changelog
 
+## 1.6.9
+- M3U/M3U8-Dateien aus dem Dateimanager werden als Wiedergabelisten geöffnet; lokale Audiodateien laufen über GStreamer und Stream-URLs über VLC.
+- Debian-Desktop/MIME-Registrierung für Audio- und Videodateien. Wählbar als System-Standardplayer, ohne bestehende Standardeinstellungen zu überschreiben.
+
 ## 1.6.8
 - Debian-Desktop/MIME-Registrierung für Audio- und Videodateien. Wählbar als System-Standardplayer, ohne bestehende Standardeinstellungen zu überschreiben.
 
@@ -138,3 +142,4 @@
 - Die bestätigte Wiedergabe- und Vollbildimplementierung aus Version 1.5.37 als Grundlage für DVD und Blu-ray wiederhergestellt.
 - DVD und Blu-ray verwenden weiterhin denselben eingebetteten VLC-Player und dieselben Wiedergabesteuerungen wie Videodateien.
 - In dieser Version wurden weder die Vollbildgeometrie noch die Stopp-/Startlogik geändert.
+\n## 1.6.9 – M3U/M3U8-Dateimanager-Fix\n- Extern geöffnete M3U/M3U8-Dateien werden als Playlists eingelesen und gestartet.\n- Audioeinträge laufen über GStreamer, Stream-URLs über VLC.\n
